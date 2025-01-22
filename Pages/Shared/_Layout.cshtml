@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="display: flex; height: 100%; flex-direction: column; overflow: hidden;">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,8 +8,8 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/GGJTextGame.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
+<body style="display: flex; height: 100%; flex-direction: column; overflow: hidden;">
+    <header style="flex-shrink: 0;">
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
                 <a class="navbar-brand" asp-area="" asp-page="/Index">GGJTextGame</a>
@@ -30,13 +30,11 @@
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+    <div class="container" style="flex-grow: 1; overflow-y: scroll; padding: 20px">
+        @RenderBody()
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="border-top footer text-muted" style="flex-shrink: 0;">
         <div class="container">
             &copy; 2025 - GGJTextGame - <a asp-area="" asp-page="/Credits">Credits</a>
         </div>

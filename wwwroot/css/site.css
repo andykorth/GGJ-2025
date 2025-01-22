@@ -20,3 +20,23 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* General terminal styling */
+.terminal {
+  font-family: "Courier New", Courier, monospace; /* Monospaced font */
+  background-color: #000; /* Black terminal background */
+  color: #cfc; /* Green text (classic terminal look) */
+  padding: 10px;
+  margin: 0; /* Remove margin */
+  list-style: none; /* No bullets for the list */
+  height: 100%; /* Full height of the container */
+  overflow-y: auto; /* Scrolling for overflow */
+  white-space: pre-wrap; /* Preserve formatting for multiline content */
+  border: 1px solid #555; /* Optional: border for visual separation */
+  box-sizing: border-box; /* Include padding in height/width calculations */
+}
+
+/* Optional: Add styles for individual messages */
+.terminal li {
+  margin: 5px 0;
+}
