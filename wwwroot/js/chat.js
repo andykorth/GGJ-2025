@@ -6,12 +6,22 @@ var connection = new signalR.HubConnectionBuilder().withUrl("/gameHub").build();
 document.getElementById("sendButton").disabled = true;
 
 connection.on("ReceiveMessage", function (user, message) {
+
+    const messageList = document.getElementById("messagesList");
+
     var li = document.createElement("li");
-    document.getElementById("messagesList").appendChild(li);
+    messageList.appendChild(li);
     // We can assign user-supplied strings to an element's textContent because it
     // is not interpreted as markup. If you're assigning in any other way, you 
     // should be aware of possible script injection concerns.
     li.textContent = `${user} says ${message}`;
+
+    // scroll to bottom.
+    const scrollBox = document.querySelector('.scroll-box');
+    scrollBox.scrollTop = scrollBox.scrollHeight;
+
+    messageList.scrollTop = ahhhh.scrollHeight;
+
 });
 
 connection.start().then(function () {

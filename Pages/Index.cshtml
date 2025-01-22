@@ -2,19 +2,21 @@
 @{
     ViewData["Title"] = "GGJ Text Game";
 }
-<div class="container" style="max-width: 800px;">
+<div class="container" style="max-width: 800px; display: flex; height: 100%; flex-direction: column; ">
     <div class="row p-1">
         <div class="col-1">User</div>
         <div class="col-5"><input type="text" id="userInput" /></div>
     </div>
 
-    <div class="scroll-box" style="flex-grow: 1; height:100%; overflow-y: scroll;">
+    <div class="scroll-box" style="flex-grow: 1; height:100px; overflow-y: scroll;">
         <ul id="messagesList" class="terminal"></ul>
     </div>
 
     <div class="row p-1">
         <div class="col-5">
             <input type="text" class="w-100" id="messageInput" />
+        </div>
+        <div class="col-1">
             <input type="button" id="sendButton" value="Send Message" />
         </div>
     </div>
