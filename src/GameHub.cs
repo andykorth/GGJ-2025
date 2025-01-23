@@ -10,17 +10,21 @@ public class GameHub : Hub
     // Called when a player sends a message
     public async Task SendMessage(string playerName, string message)
     {
-        if(playerName == "System") playerName = "NaughtyPlayer";
-
         Player p = RetrievePlayer(playerName);
         InvokeCommand.Invoke(p, message);
 
+        Log.Info($"[{playerName}]: {message}");
+
         // Broadcast the message to all connected clients
-        await Clients.All.SendAsync("ReceiveLine", playerName, message);
+        SendAll(playerName + " says: " + message);
     }
 
     public void SendAll(string line){
         Clients.All.SendAsync("ReceiveLine", line);
+    }
+
+    public void Send(string line){
+        Clients.Caller.SendAsync("ReceiveLine", line);
     }
 
     private Player RetrievePlayer(string playerName)
@@ -31,14 +35,13 @@ public class GameHub : Hub
             found = new Player();
             found.name = playerName;
             // new client, send them the welcome:
-            Clients.Caller.SendAsync("ReceiveLine", $"Welcome {playerName}. Clients connected: {ConnectedClients.Count}");
-            Clients.Caller.SendAsync("ReceiveLine", $"Type 'help' for help.");
+            Send($"Welcome {playerName}. Clients connected: {ConnectedClients.Count}");
+            Send($"Type 'help' for help.");
+    
+            Clients.Others.SendAsync("ReceiveLine", $"Player [{found.name}] has joined.");
+            
+            loggedInPlayers.Add(found);
         }
-
-        foreach (Player player in loggedInPlayers){
-            Clients.All.SendAsync("ReceiveLine", "System", $"Player [{found.name}] has joined.");
-        }
-        loggedInPlayers.Add(found);
 
         return found;
     }
@@ -51,6 +54,22 @@ public class GameHub : Hub
     {
         ConnectedClients.TryAdd(Context.ConnectionId, Context.User?.Identity?.Name ?? "Anonymous");
         Console.WriteLine($"Client connected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");
+        
+        Send(
+@"
+          Welcome!
+   ____  ____     _   ____   ___ ____  ____  
+  / ___|/ ___|   | | |___ \ / _ \___ \| ___| 
+ | |  _| |  _ _  | |   __) | | | |__) |___ \ 
+ | |_| | |_| | |_| |  / __/| |_| / __/ ___) |
+  \____|\____|\___/  |_____|\___/_____|____/ 
+
+GGJ 2025
+
+Enter your username above, then send your first command below. Try 'help' to get started.
+                                                                                                                                                       
+");
+
         return base.OnConnectedAsync();
     }
 

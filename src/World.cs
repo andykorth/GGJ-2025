@@ -6,6 +6,11 @@ public class World
 {
 	// Everything you want to save or serialize is stored on the world.
 	public static World instance;
+
+
+
+	#region  Save and load
+
 	public const string FILENAME = "world.json";
 
 	public static void CreateOrLoad(){
@@ -29,11 +34,11 @@ public class World
 			serializer.Serialize(file, instance);
 		}
 
-		// This ensures interrupted file writes don't destroy data.
+		// This ensures interrupted file writes don't destroy data. (power loss before windows NTFS commits a write to disk)
 		// the previous working backup is retained.
 		if(File.Exists(FILENAME + "tmp")){
 			if(File.Exists(FILENAME)){
-				// retain previous version:
+				// retain previous version so users can manually restore broken saves.
 				if(File.Exists(FILENAME +"bk")){
 					File.Delete(FILENAME + "bk");
 				}
@@ -44,5 +49,7 @@ public class World
 		}
 
 	}
+
+	#endregion
 
 }
