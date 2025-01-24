@@ -27,4 +27,5 @@ https://learn.microsoft.com/en-us/aspnet/core/tutorials/signalr?view=aspnetcore-
 ### Features
 
 * A robust logging engine. You can `Log.Info()` or `Log.Error()`. You don't even need a set of factories to log to the console!
-* Serialization.
+* Serialization of the world.
+* Hot reloading actually works reliably. 

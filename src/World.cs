@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
@@ -6,6 +7,8 @@ public class World
 {
 	// Everything you want to save or serialize is stored on the world.
 	public static World instance;
+
+	public DateTime worldCreationDate;
 
 
 
@@ -20,6 +23,7 @@ public class World
 		}else{
 			Console.WriteLine("No world found, writing one.");
 			instance = new World();
+			instance.worldCreationDate = DateTime.Now;
 			SaveWorld();
 		}
 	}

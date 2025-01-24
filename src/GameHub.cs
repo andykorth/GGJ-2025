@@ -10,13 +10,17 @@ public class GameHub : Hub
     // Called when a player sends a message
     public async Task SendMessage(string playerName, string message)
     {
+        if(string.IsNullOrEmpty(playerName)){
+            Send("First, enter your name above.");
+            return;
+        }
+
         Player p = RetrievePlayer(playerName);
-        InvokeCommand.Invoke(p, message);
+        var m = message.Split(" ", 2, StringSplitOptions.TrimEntries);
+        InvokeCommand.Invoke(p, this, m[0], m.Length > 1 ? m[1] : "");
 
-        Log.Info($"[{playerName}]: {message}");
+        Log.Info($"[{playerName}]: [{m[0]}] - [{(m.Length > 1 ? m[1] : "")}]");
 
-        // Broadcast the message to all connected clients
-        SendAll(playerName + " says: " + message);
     }
 
     public void SendAll(string line){
@@ -25,6 +29,10 @@ public class GameHub : Hub
 
     public void Send(string line){
         Clients.Caller.SendAsync("ReceiveLine", line);
+    }
+
+    public void SendImage(string url){
+        Clients.All.SendAsync("ReceiveImage", url);
     }
 
     private Player RetrievePlayer(string playerName)

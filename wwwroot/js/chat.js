@@ -6,23 +6,50 @@ var connection = new signalR.HubConnectionBuilder().withUrl("/gameHub").build();
 document.getElementById("sendButton").disabled = true;
 
 connection.on("ReceiveLine", function (message) {
-
     const messageList = document.getElementById("messagesList");
 
-    var li = document.createElement("li");
-    messageList.appendChild(li);
-    // We can assign user-supplied strings to an element's textContent because it
-    // is not interpreted as markup. If you're assigning in any other way, you 
-    // should be aware of possible script injection concerns.
-    li.textContent = `${message}`;
+    const li = document.createElement("li");
 
-    // scroll to bottom.
+    // Replace inline color tags with corresponding <span> elements
+    // Example: [red]word[/red] -> <span style="color: red;">word</span>
+    const htmlMessage = message.replace(/\[([a-zA-Z]+)\](.+?)\[\/\1\]/g, (match, color, text) => {
+        // Escape color and text to prevent potential injection
+        const safeColor = color.replace(/[^a-zA-Z]/g, "");
+        const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return `<span style="color: ${safeColor};">${safeText}</span>`;
+    });
+
+    // Set the HTML content of the list item
+    li.innerHTML = htmlMessage;
+
+    messageList.appendChild(li);
+
+    ScrollToBottom();
+});
+
+
+connection.on("ReceiveImage", function (imageUrl) {
+    const messageList = document.getElementById("messagesList");
+
+    const li = document.createElement("li");
+    const img = document.createElement("img");
+    img.src = imageUrl;
+    img.alt = "Received image"; // Optional: Alt text for accessibility
+    img.style.maxWidth = "100%"; // Optional: Ensures the image fits within the container
+
+    li.appendChild(img);
+    messageList.appendChild(li);
+
+    ScrollToBottom();
+});
+
+function ScrollToBottom(){
     const scrollBox = document.querySelector('.scroll-box');
     scrollBox.scrollTop = scrollBox.scrollHeight;
-
-    messageList.scrollTop = ahhhh.scrollHeight;
-
-});
+    
+    const messageList = document.getElementById("messagesList");
+    messageList.scrollTop = messageList.scrollHeight;
+}
 
 connection.start().then(function () {
     document.getElementById("sendButton").disabled = false;
