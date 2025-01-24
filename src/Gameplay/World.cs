@@ -10,7 +10,9 @@ public class World
 
 	public DateTime worldCreationDate;
 
-
+	public static void Update(){
+		// update stuff goes here.
+	}
 
 	#region  Save and load
 

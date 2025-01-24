@@ -4,6 +4,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
 
+// This is what runs the update loop for the game
+// and eventually calls World.Update
+builder.Services.AddHostedService<GameUpdateService>();
+
 var app = builder.Build();
 app.Urls.Add("http://*:3000");
 
