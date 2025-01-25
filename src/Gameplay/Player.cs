@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 public class Player
 {
 	public string name;
+	public string uuid;
 	public int cash;
 	public int tutorialStep = 0;
 
@@ -32,14 +33,15 @@ public class Player
 		tutorialStep = 0;
 		exploredSiteUUIDs = new List<string>();
 		ships = new List<Ship>();
+		uuid = System.Guid.NewGuid().ToString();
 		
 		// start with two ships!
 		Ship s = new Ship();
-		s.shipDesign = World.instance.GetShipDesign("Pioneer");
+		s.Init(World.instance.GetShipDesign("Pioneer"));
 		ships.Add(s);
 		
 		s = new Ship();
-		s.shipDesign = World.instance.GetShipDesign("Pioneer");
+		s.Init(World.instance.GetShipDesign("Pioneer"));
 		ships.Add(s);
 
 		currentResearch = null;
@@ -60,10 +62,13 @@ public class ExploredSite{
 
 public class Ship{
 	public string? name;
+	public string uuid;
 	public ShipDesign shipDesign;
 	public ExploredSite lastLocation;
 	public ShipMission shipMission = ShipMission.Idle;
     public float condition = 1.0f;
+	// this isn't used for the timer, but it's here so we can show it.
+	public long arrivalTime = 0;
 
 
     internal string ShortLine(int index)
@@ -75,10 +80,25 @@ public class Ship{
 
     internal string LongLine()
     {
-		string s = $"      Current Location: {(lastLocation == null ? "Station" : lastLocation.name) } \n";
-		s += "      Ship Design Speed: 1.0                     Actual Speed: 1.0";
+		string s = "";
+		if(shipMission == ShipMission.Idle){
+			s += $"      Current Location: {(lastLocation == null ? "Station" : lastLocation.name) } \n";
+		}
+		if(shipMission == ShipMission.Exploring){
+			s += $"      Exploring... Arrives in {(arrivalTime - World.instance.ticks) } \n";
+		}
+		s += "      Ship Design Speed: 1.0                     Actual Speed: 1.0\n";
 		return s;
     }
+
+    internal void Init(ShipDesign shipDesign)
+    {
+		this.uuid = System.Guid.NewGuid().ToString();
+        this.shipDesign = shipDesign;
+		this.shipMission = ShipMission.Idle;
+		this.condition = 1.0f;
+    }
+
     public enum ShipMission {
 		Idle,
         Exploring

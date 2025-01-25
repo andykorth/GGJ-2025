@@ -53,8 +53,10 @@ public class Commands
 
         output += $"========== World Status ==========\n";
         output += " World created: " + World.instance.worldCreationDate.ToString() + "\n";
+        output += " Current Tick: " + World.instance.ticks + "\n";
         output += " Players Joined: " + World.instance.allPlayers.Count() + "\n";
         output += " Planets Discovered: " + World.instance.allSites.Count() + "\n";
+        output += " Scheduled Tasks: " + World.instance.allScheduledActions.Count() + "\n";
 
         game.Send(output);
     }
@@ -154,7 +156,9 @@ public class Commands
                     string r = response.ToLower();
                     if(r == "y" || r == "n"){
                         if(r == "y")
-                            StartExploration(p, s);
+                            StartExploration(ticks, p, s);
+                        else
+                            game.Send("Exploration canceled.");
                         return true;
                     }else{
                         return false;
@@ -171,10 +175,12 @@ public class Commands
 
     }
 
-    private static void StartExploration(Player p, Ship s)
+    private static void StartExploration(int duration, Player p, Ship s)
     {
         s.shipMission = global::Ship.ShipMission.Exploring;
-        
+        s.arrivalTime = duration + World.instance.ticks;
+        ScheduledTask st = new ScheduledTask(duration, p, s, ScheduledAction.ExplorationMission);
+        World.instance.Schedule(st);
     }
 
     private static void ShipRename(Player p, GameHub game, string args)

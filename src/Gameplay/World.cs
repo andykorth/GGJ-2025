@@ -15,10 +15,9 @@ public class World
 
 	public List<ExploredSite> allSites;
 	public List<ShipDesign> allShipDesigns;
+	public List<ScheduledTask> allScheduledActions;
 
-	// ticks this launch. restart counter when we restart.
-	[NonSerialized]
-	public int ticks = 0;
+	public long ticks = 0; // 2^64 seconds is enough time for the rest of the universe
     internal int timescale = 1;
 
     public static void Update(){
@@ -30,8 +29,16 @@ public class World
 			SaveWorld();
 		}
 
-		// update stuff goes here.
 		ticks += 1;
+
+		// Use a while loop to efficiently remove tasks that are ready
+		while (allScheduledActions.Count > 0 && allScheduledActions[0].completedOnTick <= ticks)
+		{
+			var st = allScheduledActions[0];
+			st.InvokeAction();
+			allScheduledActions.RemoveAt(0); // Remove the first task from the list
+		}
+
 	}
 
 	public World(){
@@ -40,6 +47,7 @@ public class World
 		allSites = new List<ExploredSite>();
 		allShipDesigns = new List<ShipDesign>();
 		allShipDesigns.Add( ShipDesign.BasicExplorer() );
+		allScheduledActions = new List<ScheduledTask>(); 
 		timescale = 1;
 
 	}
@@ -88,6 +96,23 @@ public class World
     internal ShipDesign GetShipDesign(string name)
     {
         return allShipDesigns.Find(x => x.name == name)!;
+    }
+
+    internal void Schedule(ScheduledTask st)
+    {
+        allScheduledActions.Add(st);
+		// todo could sort less. could make a heap.
+		allScheduledActions.OrderBy((task) => task.completedOnTick);
+    }
+
+    internal Player? FindPlayer(string playerUUID)
+    {
+        return allPlayers.Find(x => x.uuid == playerUUID);
+    }
+
+    internal Ship? FindShip(Player p, string? shipUUID)
+    {
+        return p.ships.Find(x => x.uuid == shipUUID);
     }
 
     #endregion

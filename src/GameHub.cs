@@ -6,6 +6,7 @@ public class GameHub : Hub
     // it is slightly naughty to have a static list here, but Hub instances are transient. This will persist
     // fine until you put your game in a giant distributed datacenter. But then the whole thing won't work anyway.
     public static List<Player> loggedInPlayers = new List<Player>();
+    public static GameHub instance;
 
     // Called when a player sends a message
     public void SendMessage(string playerName, string message)
@@ -82,6 +83,9 @@ public class GameHub : Hub
     // Called when a client connects
     public override Task OnConnectedAsync()
     {
+        // no better place to do this?
+        instance = this;
+
         ConnectedClients.TryAdd(Context.ConnectionId, Context.User?.Identity?.Name ?? "Anonymous");
         Console.WriteLine($"Client connected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");
         
