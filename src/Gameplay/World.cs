@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.IO.IsolatedStorage;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
@@ -14,8 +16,22 @@ public class World
 	public List<ExploredSite> allSites;
 	public List<ShipDesign> allShipDesigns;
 
-	public static void Update(){
+	// ticks this launch. restart counter when we restart.
+	[NonSerialized]
+	public int ticks = 0;
+    internal int timescale = 1;
+
+    public static void Update(){
+		instance.UpdateInstance();
+	}
+
+	public void UpdateInstance(){
+		if(ticks % 10 == 0){
+			SaveWorld();
+		}
+
 		// update stuff goes here.
+		ticks += 1;
 	}
 
 	public World(){
@@ -24,12 +40,13 @@ public class World
 		allSites = new List<ExploredSite>();
 		allShipDesigns = new List<ShipDesign>();
 		allShipDesigns.Add( ShipDesign.BasicExplorer() );
+		timescale = 1;
 
 	}
 
 	#region  Save and load
 
-	public const string FILENAME = "world.json";
+	public const string FILENAME = "../world.json";
 
 	public static void CreateOrLoad(){
 		Console.WriteLine("Create or load world...");
@@ -47,7 +64,7 @@ public class World
 		
 		// serialize JSON directly to a file using stream
 		var serializer = JSONUtilities.serializer;
-		using (StreamWriter file = File.CreateText(FILENAME + "tmp"))
+		using (StreamWriter file = File.CreateText( FILENAME + "tmp"))
 		{
 			serializer.Serialize(file, instance);
 		}
@@ -68,9 +85,9 @@ public class World
 
 	}
 
-    internal ShipDesign? GetShipDesign(string name)
+    internal ShipDesign GetShipDesign(string name)
     {
-        return allShipDesigns.Find(x => x.name == name);
+        return allShipDesigns.Find(x => x.name == name)!;
     }
 
     #endregion

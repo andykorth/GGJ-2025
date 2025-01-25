@@ -8,14 +8,14 @@ public class GameHub : Hub
     public static List<Player> loggedInPlayers = new List<Player>();
 
     // Called when a player sends a message
-    public async Task SendMessage(string playerName, string message)
+    public void SendMessage(string playerName, string message)
     {
         if(string.IsNullOrEmpty(playerName)){
             Send("First, enter your name above.");
             return;
         }
 
-        Player p = RetrievePlayer(playerName);
+        Player p = RetrievePlayer(playerName, GetContext());
         var m = message.Split(" ", 2, StringSplitOptions.TrimEntries);
         InvokeCommand.Invoke(p, this, m[0], m.Length > 1 ? m[1] : "");
 
@@ -39,15 +39,20 @@ public class GameHub : Hub
         Clients.All.SendAsync("PlaySound", url);
     }
 
-    private Player RetrievePlayer(string playerName)
+    private HubCallerContext GetContext()
+    {
+        return Context;
+    }
+
+    private Player RetrievePlayer(string playerName, HubCallerContext context)
     {
         var matches = World.instance.allPlayers.FindAll(x => x.name == playerName);
         if(matches.Count > 1){
             Log.Error($"Multiple players exist with name {playerName}");
         }
         if(matches.Count == 0){
-            Player newPlayer = new Player();
-            newPlayer.name = playerName;
+            Log.Info($"First log in of player: {playerName}");
+            Player newPlayer = new Player(playerName);
             // new client, send them the welcome:
             Send($"Welcome {playerName}. Clients connected: {ConnectedClients.Count}");
             Send($"Type 'help' for help.");
@@ -56,6 +61,7 @@ public class GameHub : Hub
             
             loggedInPlayers.Add(newPlayer);
             World.instance.allPlayers.Add(newPlayer);
+            newPlayer.connection = context;
             return newPlayer;
         }
 
@@ -93,7 +99,9 @@ Try 'help' to get started.
     }
 
     // Called when a client disconnects
+#pragma warning disable CS8765 // Nullability of type of parameter doesn't match overridden member (possibly because of nullability attributes).
     public override Task OnDisconnectedAsync(Exception exception)
+#pragma warning restore CS8765 // Nullability of type of parameter doesn't match overridden member (possibly because of nullability attributes).
     {
         ConnectedClients.TryRemove(Context.ConnectionId, out _);
         Console.WriteLine($"Client disconnected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");

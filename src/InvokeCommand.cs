@@ -41,6 +41,7 @@ public class InvokeCommand
         if (Commands.TryGetValue(command.ToLower(), out var method))
         {
             try {
+                game.Send($"[magenta]>{command}[/magenta] {args}");
                 method.Invoke(null, new object[] { p, game, args });
             }
             catch (Exception ex) {

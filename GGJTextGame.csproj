@@ -8,6 +8,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
+    <Content Remove="world.json" />
+    <Content Include="world.json" Watch="false" />
+    <Content Remove="world.jsonbk" />
+    <Content Include="world.jsonbk" Watch="false" />
   </ItemGroup>
 
 </Project>

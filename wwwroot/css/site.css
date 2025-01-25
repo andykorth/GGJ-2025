@@ -25,7 +25,7 @@ body {
 .terminal {
   font-family: "Courier New", Courier, monospace; /* Monospaced font */
   background: radial-gradient(circle, #333 0%, #111 60%, #000 100%); /* CRT radial gradient */
-  text-shadow: 0 0 2px #0f0, 0 0 5px #0f0; /* Subtle glow effect for text */
+  text-shadow: 0 0 10px #0f08; /* Subtle glow effect for text */
   font-size: 0.9em;
   color: #cfc; /* Green text (classic terminal look) */
   padding: 10px;

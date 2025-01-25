@@ -7,7 +7,7 @@ public class Player
 {
 	public string name;
 	public int cash;
-	public bool hasFinishedTutorial = false;
+	public int tutorialStep = 0;
 
 	public List<string> exploredSiteUUIDs;
 	public List<Ship> ships;	
@@ -15,16 +15,28 @@ public class Player
 	public string? currentResearch;
 	public float currentResearchProgress;
 
+	[NonSerialized]
+    internal HubCallerContext connection;
+
+    public Player(){
+		// default constructor for newtonsoft
+	}
 
 	public Player(string name){
 		this.name = name;
 		cash = 10000;
-		hasFinishedTutorial = false;
+		tutorialStep = 0;
 		exploredSiteUUIDs = new List<string>();
 		ships = new List<Ship>();
+		
+		// start with two ships!
 		Ship s = new Ship();
 		s.shipDesign = World.instance.GetShipDesign("Pioneer");
-		ships.Add(n);
+		ships.Add(s);
+		
+		s = new Ship();
+		s.shipDesign = World.instance.GetShipDesign("Pioneer");
+		ships.Add(s);
 
 		currentResearch = null;
 		currentResearchProgress = 0f;
@@ -43,12 +55,25 @@ public class ExploredSite{
 }
 
 public class Ship{
+	public string? name;
 	public ShipDesign shipDesign;
 	public ExploredSite lastLocation;
 	public ShipMission shipMission = ShipMission.Idle;
+    public float condition = 1.0f;
 
 
-	public enum ShipMission {
+    internal string ShortLine(int index)
+    {
+		string showIndex = index <= 0 ? "" : index + ")";
+		string n = name ?? shipDesign.name;
+		return $"   {showIndex} {n} - Status: {((int)(condition*100))}%, {shipMission}\n";
+    }
+
+    internal string LongLine()
+    {
+		return $"      Current Location: {(lastLocation == null ? "Station" : lastLocation.name) } \n";
+    }
+    public enum ShipMission {
 		Idle
 	}
 

@@ -16,7 +16,8 @@ connection.on("ReceiveLine", function (message) {
         // Escape color and text to prevent potential injection
         const safeColor = color.replace(/[^a-zA-Z]/g, "");
         const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        return `<span style="color: ${safeColor};">${safeText}</span>`;
+        const shadow = `text-shadow: 0 0 10px ${safeColor};`
+        return `<span style="color: ${safeColor};${shadow}">${safeText}</span>`;
     });
 
     // Set the HTML content of the list item
