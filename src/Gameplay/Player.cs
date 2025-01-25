@@ -17,6 +17,10 @@ public class Player
 
 	[NonSerialized]
     internal HubCallerContext connection;
+	[NonSerialized]
+    internal Func<string, bool>? captivePrompt;
+	[NonSerialized]
+    internal string? captivePromptMsg;
 
     public Player(){
 		// default constructor for newtonsoft
@@ -71,11 +75,14 @@ public class Ship{
 
     internal string LongLine()
     {
-		return $"      Current Location: {(lastLocation == null ? "Station" : lastLocation.name) } \n";
+		string s = $"      Current Location: {(lastLocation == null ? "Station" : lastLocation.name) } \n";
+		s += "      Ship Design Speed: 1.0                     Actual Speed: 1.0";
+		return s;
     }
     public enum ShipMission {
-		Idle
-	}
+		Idle,
+        Exploring
+    }
 
 }
 

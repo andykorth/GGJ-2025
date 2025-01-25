@@ -16,10 +16,18 @@ public class GameHub : Hub
         }
 
         Player p = RetrievePlayer(playerName, GetContext());
-        var m = message.Split(" ", 2, StringSplitOptions.TrimEntries);
-        InvokeCommand.Invoke(p, this, m[0], m.Length > 1 ? m[1] : "");
 
-        Log.Info($"[{playerName}]: [{m[0]}] - [{(m.Length > 1 ? m[1] : "")}]");
+        // check if the player has a captive prompt. If so, run that.
+        if(p.captivePrompt != null){
+            Log.Info($"[{playerName}] (captiveprompt): [{message}]");
+            InvokeCaptivePrompt(p, message);
+        }else{
+            // run the general command entry.
+            var m = message.Split(" ", 2, StringSplitOptions.TrimEntries);
+            InvokeCommand.Invoke(p, this, m[0], m.Length > 1 ? m[1] : "");
+
+            Log.Info($"[{playerName}]: [{m[0]}] - [{(m.Length > 1 ? m[1] : "")}]");
+        }
 
     }
 
@@ -106,5 +114,26 @@ Try 'help' to get started.
         Console.WriteLine($"Client disconnected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");
         return base.OnDisconnectedAsync(exception);
     }
+
+    internal void SetCaptivePrompt(Player p, string message, Func<string, bool> value)
+    {
+        Send(message);
+        p.captivePrompt = value;
+        p.captivePromptMsg = message;
+    }
+
+    private void InvokeCaptivePrompt(Player p, string playerInput)
+    {
+        bool b = p.captivePrompt!(playerInput);
+        if(b){
+            // done with captive prompt!
+            p.captivePrompt = null;
+            p.captivePromptMsg = null;
+        }else{
+            // repeat the prompt, they did it wrong.
+            Send(p.captivePromptMsg!);
+        }
+    }
+
 }
 

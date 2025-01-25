@@ -128,7 +128,7 @@ public class Commands
         int.TryParse(args, out start);
         string s= ShowShips(20, p, start);
         s += $"===== Ship Commands =====\n";
-        s += " [salmon]ship explore 0[/salmon] - Send Ship #1 to explore\n";
+        s += " [salmon]ship explore 0[/salmon] - Send your first ship to explore\n";
         s += " [salmon]ship rename 0 Big Bertha[/salmon] - Rename your first ship to 'Big Bertha'\n";
 
         game.Send(s);
@@ -143,14 +143,40 @@ public class Commands
             output += s.ShortLine(0);
             output += s.LongLine();
 
-            int ticks = 600 / World.instance.timescale;
-            output += $" Exploration mission will take {ticks} seconds.";
+            if(s.shipMission == global::Ship.ShipMission.Idle){
 
-            game.Send(output);
+                int ticks = 600 / World.instance.timescale;
+                output += $" Exploration mission will take {ticks} seconds.";
+
+                game.Send(output);
+                game.SetCaptivePrompt(p, "Do you want to start this mission? (y/n)",
+                (string response) => {
+                    string r = response.ToLower();
+                    if(r == "y" || r == "n"){
+                        if(r == "y")
+                            StartExploration(p, s);
+                        return true;
+                    }else{
+                        return false;
+                    }
+                });
+            }else{
+                output += $" Ship is already on a mission!";
+                game.Send(output);
+            }
+            return;
+
         }
         game.Send($"Invalid ship exploration args [{args}]");
 
     }
+
+    private static void StartExploration(Player p, Ship s)
+    {
+        s.shipMission = global::Ship.ShipMission.Exploring;
+        
+    }
+
     private static void ShipRename(Player p, GameHub game, string args)
     {
         int index;
