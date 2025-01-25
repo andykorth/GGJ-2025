@@ -64,7 +64,7 @@ public class Ship{
 
     internal string ShortLine(int index)
     {
-		string showIndex = index <= 0 ? "" : index + ")";
+		string showIndex = index < 0 ? "" : index + ")";
 		string n = name ?? shipDesign.name;
 		return $"   {showIndex} {n} - Status: {((int)(condition*100))}%, {shipMission}\n";
     }

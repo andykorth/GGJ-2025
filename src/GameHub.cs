@@ -79,14 +79,13 @@ public class GameHub : Hub
         
         Send(
 @"
-     _        _             _   _____                            
-    / \   ___| |_ _ __ __ _| | |_   _|   _  ___ ___   ___  _ __  
-   / _ \ / __| __| '__/ _` | |   | || | | |/ __/ _ \ / _ \| '_ \ 
-  / ___ \\__ \ |_| | | (_| | |   | || |_| | (_| (_) | (_) | | | |
- /_/   \_\___/\__|_|  \__,_|_|   |_| \__, |\___\___/ \___/|_| |_|
-                                     |___/                       
+   ___       __             ______                      
+  / _ | ___ / /________    /_  __/_ _________  ___  ___ 
+ / __ |(_--/ __/ __/ _ \    / / / // / __/ _ \/ _ \/ _ \
+/_/ |_/___/\__/_/  \___/   /_/  \_, /\__/\___/\___/_//_/
+                               /___/                    
 
-Astral Tycoon is a multiplayer space empire simulation game. Cooperate with other
+Astro Tycoon is a multiplayer space empire simulation game. Cooperate with other
 players to expand your empire, buy and sell your production, explore with spaceships, and
 conduct research!
 

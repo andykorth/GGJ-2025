@@ -1,4 +1,4 @@
-## Astral Tycoon
+## Astro Tycoon
 
 A text oriented economic expansion game or the Global Game Jam 2025.
 
@@ -30,6 +30,7 @@ https://learn.microsoft.com/en-us/aspnet/core/tutorials/signalr?view=aspnetcore-
 ### Gameplay
 
 * "Exploration" as a mechanic to get a planet site.
+  * Might also find the item to start a research collab.
 * Construction of a production building on the planet site.
 * Ship construction at different levels for better exploration ships.
 * Exchange Station is where bids and asks are placed.

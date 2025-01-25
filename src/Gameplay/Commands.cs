@@ -106,22 +106,30 @@ public class Commands
         return false;
     }
 
+    private static string PullArg(ref string args){
+        var split = args.Split(" ", 2, StringSplitOptions.TrimEntries);
+        args = split[1];
+        return split[0];
+    }
+
     [GameCommand("View and interact with your empire's ships.")]
     public static void Ship(Player p, GameHub game, string args)
     {
         if(CheckArg("explore", ref args)){
             ShipExplore(p, game, args);
+            return;
         }
         if(CheckArg("rename", ref args)){
             ShipRename(p, game, args);
+            return;
         }
         
         int start = 0;
         int.TryParse(args, out start);
         string s= ShowShips(20, p, start);
         s += $"===== Ship Commands =====\n";
-        s += " [salmon]ship explore 1[/salmon] - Send Ship #1 to explore\n";
-        s += " [salmon]ship rename 1 Big Bertha[/salmon] - Rename ship #1 to 'Big Bertha'\n";
+        s += " [salmon]ship explore 0[/salmon] - Send Ship #1 to explore\n";
+        s += " [salmon]ship rename 0 Big Bertha[/salmon] - Rename your first ship to 'Big Bertha'\n";
 
         game.Send(s);
     }
@@ -145,18 +153,15 @@ public class Commands
     }
     private static void ShipRename(Player p, GameHub game, string args)
     {
-        int index = 0;
-        string output = $"Bad index for rename {args}:";
-        if(int.TryParse(args, out index)){
-            if(CheckArg("" + index, ref args)){
-                Ship ship = p.ships[index];
-                ship.name = args;
-                output = $"Ship {index} renamed to {args}:";
-            }else{
-                output = "No ship name?";
-            }
+        int index;
+        string indexS = PullArg(ref args);
+        if(int.TryParse(indexS, out index)){
+            Ship ship = p.ships[index];
+            ship.name = args;
+            game.Send($"Ship {index} renamed to {args}");
+        }else{
+            game.Send($"Bad index for rename [{indexS}]");
         }
-        game.Send(output);
 
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Microsoft.AspNetCore.Identity.Data;
 
 [AttributeUsage(AttributeTargets.Method)]
 public class GameCommandAttribute : Attribute
@@ -45,7 +46,15 @@ public class InvokeCommand
                 method.Invoke(null, new object[] { p, game, args });
             }
             catch (Exception ex) {
-                game.Send($"Error executing command [{command}]: {ex.Message}");
+                if(ex.InnerException != null){
+                    game.Send($"Error executing command [{command}]: {ex.InnerException!.Message}");
+                    game.Send(ex!.InnerException!.StackTrace!);
+                    Log.Error(ex.InnerException.ToString());
+                }else{
+                    game.Send($"Error executing command [{command}]: {ex.Message}");
+                    game.Send(ex.StackTrace!);
+                    Log.Error(ex.ToString());
+                }
             }
             return;
         }
