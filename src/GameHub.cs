@@ -41,21 +41,25 @@ public class GameHub : Hub
 
     private Player RetrievePlayer(string playerName)
     {
-        Player? found = loggedInPlayers.FirstOrDefault(x => x.name == playerName);
-
-        if(found == null){
-            found = new Player();
-            found.name = playerName;
+        var matches = World.instance.allPlayers.FindAll(x => x.name == playerName);
+        if(matches.Count > 1){
+            Log.Error($"Multiple players exist with name {playerName}");
+        }
+        if(matches.Count == 0){
+            Player newPlayer = new Player();
+            newPlayer.name = playerName;
             // new client, send them the welcome:
             Send($"Welcome {playerName}. Clients connected: {ConnectedClients.Count}");
             Send($"Type 'help' for help.");
     
-            Clients.Others.SendAsync("ReceiveLine", $"Player [{found.name}] has joined.");
+            Clients.Others.SendAsync("ReceiveLine", $"Player [{newPlayer.name}] has joined.");
             
-            loggedInPlayers.Add(found);
+            loggedInPlayers.Add(newPlayer);
+            World.instance.allPlayers.Add(newPlayer);
+            return newPlayer;
         }
 
-        return found;
+        return matches[0];
     }
 
     // Thread-safe dictionary to track connected clients
@@ -69,16 +73,19 @@ public class GameHub : Hub
         
         Send(
 @"
-          Welcome!
-   ____  ____     _   ____   ___ ____  ____  
-  / ___|/ ___|   | | |___ \ / _ \___ \| ___| 
- | |  _| |  _ _  | |   __) | | | |__) |___ \ 
- | |_| | |_| | |_| |  / __/| |_| / __/ ___) |
-  \____|\____|\___/  |_____|\___/_____|____/ 
+     _        _             _   _____                            
+    / \   ___| |_ _ __ __ _| | |_   _|   _  ___ ___   ___  _ __  
+   / _ \ / __| __| '__/ _` | |   | || | | |/ __/ _ \ / _ \| '_ \ 
+  / ___ \\__ \ |_| | | (_| | |   | || |_| | (_| (_) | (_) | | | |
+ /_/   \_\___/\__|_|  \__,_|_|   |_| \__, |\___\___/ \___/|_| |_|
+                                     |___/                       
 
-GGJ 2025
+Astral Tycoon is a multiplayer space empire simulation game. Cooperate with other
+players to expand your empire, buy and sell your production, explore with spaceships, and
+conduct research!
 
-Enter your username above, then send your first command below. Try 'help' to get started.
+To begin, enter your username above, then send your first command below.
+Try 'help' to get started.
                                                                                                                                                        
 ");
 
@@ -94,6 +101,3 @@ Enter your username above, then send your first command below. Try 'help' to get
     }
 }
 
-public class Player {
-    public string name;
-}

@@ -9,9 +9,22 @@ public class World
 	public static World instance;
 
 	public DateTime worldCreationDate;
+	public List<Player> allPlayers;
+
+	public List<ExploredSite> allSites;
+	public List<ShipDesign> allShipDesigns;
 
 	public static void Update(){
 		// update stuff goes here.
+	}
+
+	public World(){
+		worldCreationDate = DateTime.Now;
+		allPlayers = new List<Player>();
+		allSites = new List<ExploredSite>();
+		allShipDesigns = new List<ShipDesign>();
+		allShipDesigns.Add( ShipDesign.BasicExplorer() );
+
 	}
 
 	#region  Save and load
@@ -25,7 +38,6 @@ public class World
 		}else{
 			Console.WriteLine("No world found, writing one.");
 			instance = new World();
-			instance.worldCreationDate = DateTime.Now;
 			SaveWorld();
 		}
 	}
@@ -56,6 +68,11 @@ public class World
 
 	}
 
-	#endregion
+    internal ShipDesign? GetShipDesign(string name)
+    {
+        return allShipDesigns.Find(x => x.name == name);
+    }
+
+    #endregion
 
 }

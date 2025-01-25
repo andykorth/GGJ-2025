@@ -50,4 +50,14 @@ public class Commands
     {
         game.Send("World created: " + World.instance.worldCreationDate.ToString());
     }
+
+
+    [GameCommand("View your empire's status.")]
+    public static void Status(Player p, GameHub game, string args)
+    {
+        p.hasFinishedTutorial = true;
+
+        
+    }
+
 }

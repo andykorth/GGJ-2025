@@ -31,7 +31,6 @@ app.MapRazorPages();
 // gameplay launching stuff.
 World.CreateOrLoad();
 
-
 // Configure middleware
 app.MapHub<GameHub>("/gameHub"); // The client connects to "/gamehub"
 app.Run();
