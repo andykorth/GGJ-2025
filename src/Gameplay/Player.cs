@@ -12,17 +12,20 @@ public class Player
 
 	public List<string> exploredSiteUUIDs;
 	public List<Ship> ships;	
+    internal List<int> relicIDs;
 
 	public string? currentResearch;
 	public float currentResearchProgress;
 
 	[NonSerialized]
-    internal HubCallerContext connection;
+    internal ISingleClientProxy client;
+	[NonSerialized]
+    internal string connectionID;
+
 	[NonSerialized]
     internal Func<string, bool>? captivePrompt;
 	[NonSerialized]
     internal string? captivePromptMsg;
-
     public Player(){
 		// default constructor for newtonsoft
 	}
@@ -33,6 +36,7 @@ public class Player
 		tutorialStep = 0;
 		exploredSiteUUIDs = new List<string>();
 		ships = new List<Ship>();
+		relicIDs = new List<int>();
 		uuid = System.Guid.NewGuid().ToString();
 		
 		// start with two ships!
@@ -48,16 +52,63 @@ public class Player
 		currentResearchProgress = 0f;
 		
 	}
-	
+
+    public List<ExploredSite> GetExploredSites()
+    {
+        List<ExploredSite> exploredSites= new List<ExploredSite>();
+		foreach(var uuid in this.exploredSiteUUIDs){
+			exploredSites.Add(World.instance.GetSite(uuid)!);
+		}
+		return exploredSites;
+    }
+
+    internal void Send(string output)
+    {
+        client.SendAsync("ReceiveLine", output);
+    }
 }
 
-
-public class ExploredSite{
+public class ExploredSite {
 	public string uuid;
 	public string name;
-	public string discoveredBy;
+	public string discoveredByPlayerUUID;
 	public DateTime discoveredDate;
+	public float planetClass;
 
+    internal bool GoldilocksClass()
+    {
+        return planetClass > 0.8;
+    }
+
+    internal bool StandardClass()
+    {
+        return planetClass > 0.5;
+    }
+
+    internal void Init(string name, string discoveredBy, float planetClass)
+    {
+        this.uuid = System.Guid.NewGuid().ToString();
+		this.name = name;
+		this.discoveredByPlayerUUID = discoveredBy;
+		this.discoveredDate = DateTime.Now;
+		this.planetClass = planetClass;
+    }
+
+	public string ClassString(){
+		return GoldilocksClass() ? "Goldilocks Class" : (StandardClass() ? "Habitable" : "Uninhabitable");
+	}
+
+    internal string ShortLine(int index = -1)
+    {
+		string classMessage = ClassString();
+		string showIndex = index < 0 ? "" : index + ")";
+		return $"   {showIndex} {name} - {classMessage}\n";
+    }
+
+    internal string LongLine()
+    {
+		return $"   Discovered by {World.instance.GetPlayer(discoveredByPlayerUUID)!.name} on {discoveredDate.ToString()}\n";
+    }
 }
 
 public class Ship{
@@ -71,11 +122,14 @@ public class Ship{
 	public long arrivalTime = 0;
 
 
-    internal string ShortLine(int index)
+    internal string ShortLine(int index = -1)
     {
 		string showIndex = index < 0 ? "" : index + ")";
-		string n = name ?? shipDesign.name;
-		return $"   {showIndex} {n} - Status: {((int)(condition*100))}%, {shipMission}\n";
+		string mission = shipMission.ToString();
+		if(shipMission  == ShipMission.Exploring){
+			mission += $" ({arrivalTime - World.instance.ticks}s)";
+		}
+		return $"   {showIndex} {GetName()} - Health: {(int)(condition*100)}%, {mission}\n";
     }
 
     internal string LongLine()
@@ -85,7 +139,7 @@ public class Ship{
 			s += $"      Current Location: {(lastLocation == null ? "Station" : lastLocation.name) } \n";
 		}
 		if(shipMission == ShipMission.Exploring){
-			s += $"      Exploring... Arrives in {(arrivalTime - World.instance.ticks) } \n";
+			s += $"      Exploring... Arrives in {(arrivalTime - World.instance.ticks) }s \n";
 		}
 		s += "      Ship Design Speed: 1.0                     Actual Speed: 1.0\n";
 		return s;
@@ -97,6 +151,11 @@ public class Ship{
         this.shipDesign = shipDesign;
 		this.shipMission = ShipMission.Idle;
 		this.condition = 1.0f;
+    }
+
+    public string GetName()
+    {
+        return name ?? shipDesign.name;
     }
 
     public enum ShipMission {

@@ -39,16 +39,16 @@ public class JSONUtilities {
 
 			return t;
 		}catch(FileNotFoundException){
-			Console.WriteLine ("Missing file in deserialization attempt: " + filepath);
+			Log.Error ("Missing file in deserialization attempt: " + filepath);
 		}catch(Exception e){
 			if (e.InnerException != null) {
 				lastError = e.InnerException.ToString();
-				Console.WriteLine ("SavedInfo Deserialization: <"+filepath+"> Inner exception: \n\n" + e.InnerException.ToString());
-				Console.WriteLine ("Since loading failed, we will return a default value (null probably) here.");
+				Log.Error ("SavedInfo Deserialization: <"+filepath+"> Inner exception: \n\n" + e.InnerException.ToString());
+				Log.Error ("Since loading failed, we will return a default value (null probably) here.");
 				//throw e.InnerException;
 			} else {
 				lastError = e.ToString();
-				Console.WriteLine ("Error deserializing: " +filepath + " - " + e.ToString());
+				Log.Error ("Error deserializing: " +filepath + " - " + e.ToString());
 			}
 		}
 		return default(T);
@@ -62,12 +62,12 @@ public class JSONUtilities {
 			return jsonString;
 		}catch(Exception e){
 			if (e.InnerException != null) {
-				Console.WriteLine ("String Serialization: Inner exception: \n\n" + e.InnerException.ToString());
-				Console.WriteLine ("Since loading failed, we will return null here.");
+				Log.Error ("String Serialization: Inner exception: \n\n" + e.InnerException.ToString());
+				Log.Error ("Since loading failed, we will return null here.");
 				lastError = e.InnerException.ToString();
 			} else {
 				lastError = "JSONUtilities.Serialize err: " + e.ToString();
-				Console.WriteLine (lastError);
+				Log.Error (lastError);
 			}
 		}
 

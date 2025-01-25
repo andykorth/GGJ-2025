@@ -6,7 +6,6 @@ public class GameHub : Hub
     // it is slightly naughty to have a static list here, but Hub instances are transient. This will persist
     // fine until you put your game in a giant distributed datacenter. But then the whole thing won't work anyway.
     public static List<Player> loggedInPlayers = new List<Player>();
-    public static GameHub instance;
 
     // Called when a player sends a message
     public void SendMessage(string playerName, string message)
@@ -59,22 +58,24 @@ public class GameHub : Hub
         if(matches.Count > 1){
             Log.Error($"Multiple players exist with name {playerName}");
         }
+        Player p;
         if(matches.Count == 0){
             Log.Info($"First log in of player: {playerName}");
-            Player newPlayer = new Player(playerName);
+            p = new Player(playerName);
             // new client, send them the welcome:
-            Send($"Welcome {playerName}. Clients connected: {ConnectedClients.Count}");
+            Send($"Welcome {p}. Clients connected: {ConnectedClients.Count}");
             Send($"Type 'help' for help.");
     
-            Clients.Others.SendAsync("ReceiveLine", $"Player [{newPlayer.name}] has joined.");
+            Clients.Others.SendAsync("ReceiveLine", $"Player [{p.name}] has joined.");
             
-            loggedInPlayers.Add(newPlayer);
-            World.instance.allPlayers.Add(newPlayer);
-            newPlayer.connection = context;
-            return newPlayer;
+            World.instance.allPlayers.Add(p);
+        }else{
+            p = matches[0];
         }
+        p.connectionID = Context.ConnectionId;
+        p.client = Clients.Caller;
 
-        return matches[0];
+        return p;
     }
 
     // Thread-safe dictionary to track connected clients
@@ -83,11 +84,8 @@ public class GameHub : Hub
     // Called when a client connects
     public override Task OnConnectedAsync()
     {
-        // no better place to do this?
-        instance = this;
-
         ConnectedClients.TryAdd(Context.ConnectionId, Context.User?.Identity?.Name ?? "Anonymous");
-        Console.WriteLine($"Client connected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");
+        Log.Info($"Client connected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");
         
         Send(
 @"
@@ -101,8 +99,8 @@ Astro Tycoon is a multiplayer space empire simulation game. Cooperate with other
 players to expand your empire, buy and sell your production, explore with spaceships, and
 conduct research!
 
-To begin, enter your username above, then send your first command below.
-Try 'help' to get started.
+To begin, [cyan]enter your username above[/cyan], then send your first command below.
+Try '[red]help[/red]' to get started.
                                                                                                                                                        
 ");
 
@@ -115,7 +113,7 @@ Try 'help' to get started.
 #pragma warning restore CS8765 // Nullability of type of parameter doesn't match overridden member (possibly because of nullability attributes).
     {
         ConnectedClients.TryRemove(Context.ConnectionId, out _);
-        Console.WriteLine($"Client disconnected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");
+        Log.Info($"Client disconnected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");
         return base.OnDisconnectedAsync(exception);
     }
 

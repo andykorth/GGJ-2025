@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
+
+using Microsoft.AspNetCore.SignalR;
 
 public class Commands
 {
@@ -68,16 +65,14 @@ public class Commands
         p.tutorialStep = Math.Min(1, p.tutorialStep);
         string output = "";
 
-        output += $"========== Empire Status ==========\n";
+        output += $"=========== Empire Status ===========\n";
         
-        output += $" User: {p.name.PadRight(15)} | Cash { (p.cash+"").PadRight(10) }\n";
-        output += $" Completed Research: {0} | Cash {p.cash}\n";
+        output += $"   User: {p.name.PadRight(15)} | Cash { (p.cash+"").PadRight(10) }\n";
+        output += $"   Completed Research: {0} \n";
         output += ShowShips(4, p, 0);
-        output += $"===== Discovered Sites [{p.ships.Count}] =====\n";
-        foreach (var ship in p.ships){
-            output += $"   {ship.shipDesign.name} - Status: {((int)(ship.condition*100))}%, {ship.shipMission}\n";
-        }
 
+        output += ShowSites(4, p, 0);
+        output += $"===== Unresearched Relics [{p.relicIDs.Count}] =====\n";
         game.Send(output);
     }
 
@@ -100,6 +95,26 @@ public class Commands
         return output;
     }
 
+    private static string ShowSites(int showMax, Player p, int start)
+    {
+        string output = $"===== Discovered Sites [{p.exploredSiteUUIDs.Count}] =====\n";
+        int count = 0;
+        
+        foreach (var site in p.GetExploredSites()){
+            if(count < start) {
+                count += 1;
+                continue;
+            }
+            if(count > showMax){
+                output += $"     ... {count-showMax} more sites. (type [magenta]sites {count}[/magenta] to start at that item)";
+                break;
+            }
+            output += site.ShortLine(count);
+            count += 1;
+        }
+        return output;
+    }
+
     private static bool CheckArg(string check, ref string args){
         if(args.StartsWith(check + " ")){
             args = args.Split(check, 2, StringSplitOptions.TrimEntries)[1];
@@ -110,7 +125,11 @@ public class Commands
 
     private static string PullArg(ref string args){
         var split = args.Split(" ", 2, StringSplitOptions.TrimEntries);
-        args = split[1];
+        if(split.Length > 1){
+            args = split[1];
+        }else{
+            args = "";
+        }
         return split[0];
     }
 
@@ -125,12 +144,17 @@ public class Commands
             ShipRename(p, game, args);
             return;
         }
+        if(CheckArg("view", ref args)){
+            ShipView(p, game, args);
+            return;
+        }
         
         int start = 0;
         int.TryParse(args, out start);
         string s= ShowShips(20, p, start);
         s += $"===== Ship Commands =====\n";
-        s += " [salmon]ship explore 0[/salmon] - Send your first ship to explore\n";
+        s += " [salmon]ship view 0[/salmon] - View details of your first ship.\n";
+        s += " [salmon]ship explore 0[/salmon] - Send your first ship to explore.\n";
         s += " [salmon]ship rename 0 Big Bertha[/salmon] - Rename your first ship to 'Big Bertha'\n";
 
         game.Send(s);
@@ -140,7 +164,7 @@ public class Commands
     {
         int index = 0;
         if(int.TryParse(args, out index)){
-            string output = "Begin exploration mission with:";
+            string output = "Begin exploration mission with:\n";
             Ship s = p.ships[index];
             output += s.ShortLine(0);
             output += s.LongLine();
@@ -181,6 +205,14 @@ public class Commands
         s.arrivalTime = duration + World.instance.ticks;
         ScheduledTask st = new ScheduledTask(duration, p, s, ScheduledAction.ExplorationMission);
         World.instance.Schedule(st);
+
+        string output = $"{s.GetName()} departs for the stars.\n";
+        output += $"Hopefully their efforts will be fruitful.\n";
+        output += $"We expect to hear from them in {duration}s.\n";
+
+        p.Send(Ascii.Box(output));
+    
+
     }
 
     private static void ShipRename(Player p, GameHub game, string args)
@@ -195,5 +227,62 @@ public class Commands
             game.Send($"Bad index for rename [{indexS}]");
         }
 
+    }    
+    private static void ShipView(Player p, GameHub game, string args)
+    {
+        int index;
+        string indexS = PullArg(ref args);
+        if(int.TryParse(indexS, out index)){
+            Ship ship = p.ships[index];
+
+            game.Send(ship.ShortLine());
+            game.Send(ship.LongLine());
+        }else{
+            game.Send($"Bad index for ship viewing [{indexS}]");
+        }
     }
+
+    [GameCommand("View and interact with your planetary sites.")]
+    public static void Site(Player p, GameHub game, string args)
+    {
+        if(CheckArg("view", ref args)){
+            SiteView(p, game, args);
+            return;
+        }
+        if(CheckArg("invite", ref args)){
+            ShipExplore(p, game, args);
+            return;
+        }
+        if(CheckArg("construct", ref args)){
+            ShipRename(p, game, args);
+            return;
+        }
+
+        int start = 0;
+        int.TryParse(args, out start);
+        string s= ShowSites(20, p, start);
+        s += $"===== Site Commands =====\n";
+        s += " [salmon]site view 0[/salmon] - View details of your first planetary site.\n";
+        s += " [salmon]site invite 0[/salmon] - Invite another player to join you on your site.\n";
+        s += " [salmon]site construct 0[/salmon] - View construction options for this site\n";
+
+        game.Send(s);
+    }
+
+    private static void SiteView(Player p, GameHub game, string args)
+    {
+        int index;
+        string indexS = PullArg(ref args);
+        if(int.TryParse(indexS, out index)){
+            ExploredSite site = p.GetExploredSites()[index];
+
+            game.Send(site.ShortLine());
+            game.Send(site.LongLine());
+
+        }else{
+            game.Send($"Bad index for site viewing [{indexS}]");
+        }
+
+    }
+
 }

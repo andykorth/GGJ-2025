@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.IO.IsolatedStorage;
+using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
@@ -18,9 +19,13 @@ public class World
 	public List<ScheduledTask> allScheduledActions;
 
 	public long ticks = 0; // 2^64 seconds is enough time for the rest of the universe
-    internal int timescale = 1;
+    public int timescale = 1;
 
-    public static void Update(){
+    private GameUpdateService service;
+
+    public static void Update(GameUpdateService service)
+    {	
+		instance.service = service;
 		instance.UpdateInstance();
 	}
 
@@ -35,7 +40,7 @@ public class World
 		while (allScheduledActions.Count > 0 && allScheduledActions[0].completedOnTick <= ticks)
 		{
 			var st = allScheduledActions[0];
-			st.InvokeAction();
+			st.InvokeAction(service);
 			allScheduledActions.RemoveAt(0); // Remove the first task from the list
 		}
 
@@ -48,7 +53,7 @@ public class World
 		allShipDesigns = new List<ShipDesign>();
 		allShipDesigns.Add( ShipDesign.BasicExplorer() );
 		allScheduledActions = new List<ScheduledTask>(); 
-		timescale = 1;
+		timescale = 30;
 
 	}
 
@@ -57,11 +62,11 @@ public class World
 	public const string FILENAME = "../world.json";
 
 	public static void CreateOrLoad(){
-		Console.WriteLine("Create or load world...");
+		Log.Info("Create or load world...");
 		if(File.Exists(FILENAME)){
 			instance = JSONUtilities.Deserialize<World>(FILENAME);
 		}else{
-			Console.WriteLine("No world found, writing one.");
+			Log.Info("No world found, writing one.");
 			instance = new World();
 			SaveWorld();
 		}
@@ -105,14 +110,19 @@ public class World
 		allScheduledActions.OrderBy((task) => task.completedOnTick);
     }
 
-    internal Player? FindPlayer(string playerUUID)
+    internal Player? GetPlayer(string playerUUID)
     {
         return allPlayers.Find(x => x.uuid == playerUUID);
     }
 
-    internal Ship? FindShip(Player p, string? shipUUID)
+    internal Ship? GetShip(Player p, string? shipUUID)
     {
         return p.ships.Find(x => x.uuid == shipUUID);
+    }
+
+    internal ExploredSite? GetSite(string uuid)
+    {
+        return allSites.Find(x => x.uuid == uuid);
     }
 
     #endregion
