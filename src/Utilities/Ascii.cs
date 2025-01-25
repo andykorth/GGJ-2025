@@ -32,6 +32,29 @@ public static class Ascii{
         return box.ToString();
     }
 
+    internal static string TimeAgo(TimeSpan duration)
+    {
+        if (duration.TotalMinutes < 60) {
+            return $"{(int)duration.TotalMinutes} min ago";
+        } else if (duration.TotalHours < 24) {
+            return $"{(int)duration.TotalHours} hr ago";
+        } else {
+            return $"{(int)duration.TotalDays} days ago";
+        }
+    }
+
+    internal static object Shorten(string input, int maxLength)
+    {
+        if (string.IsNullOrEmpty(input) || maxLength <= 0) {
+            return string.Empty; // Handle edge cases
+        }
+
+        if (input.Length <= maxLength) {
+            return input; // Return the full string if it's within the limit
+        }
+        return input.Substring(0, maxLength) + "...";
+    }
+
     public static string[] planetNames = new string[]
     {
         "Zorath Prime",

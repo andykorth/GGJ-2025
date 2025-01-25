@@ -13,6 +13,9 @@ public class Player
 	public List<string> exploredSiteUUIDs;
 	public List<Ship> ships;	
     internal List<int> relicIDs;
+	public DateTime lastActivity;
+	public DateTime created;
+	public List<Message> messages;
 
 	public string? currentResearch;
 	public float currentResearchProgress;
@@ -26,8 +29,12 @@ public class Player
     internal Func<string, bool>? captivePrompt;
 	[NonSerialized]
     internal string? captivePromptMsg;
+
     public Player(){
 		// default constructor for newtonsoft
+		// use to migrate old saves.
+		if(relicIDs == null) relicIDs = new List<int>();
+		if(messages == null) messages = new List<Message>();
 	}
 
 	public Player(string name){
@@ -38,6 +45,8 @@ public class Player
 		ships = new List<Ship>();
 		relicIDs = new List<int>();
 		uuid = System.Guid.NewGuid().ToString();
+		created = DateTime.Now;
+		lastActivity = DateTime.Now;
 		
 		// start with two ships!
 		Ship s = new Ship();
@@ -170,7 +179,6 @@ public class ShipDesign{
 	public string name;
     public string description;
 
-
     internal static ShipDesign BasicExplorer()
     {
 		ShipDesign sd = new ShipDesign();
@@ -179,4 +187,29 @@ public class ShipDesign{
 		sd.description = "Basic Exploration Ship";
 		return sd;
     }
+}
+
+public class Message{
+	public DateTime sent;
+	public DateTime? read;
+	public MessageType type;
+	public string contents;
+	public string fromPlayerUUID;
+	public string? invitationSiteUUID;
+
+	public enum MessageType {
+		TextMail, Invitation,
+	}
+
+	public Message(){
+		// newtonstoft empty
+	}
+
+	public Message(Player fromPlayer, MessageType type, string contents){
+		this.sent = DateTime.Now;
+		this.type = type;
+		this.contents = contents;
+		this.fromPlayerUUID = fromPlayer.uuid;
+		this.read = null;
+	}
 }

@@ -94,6 +94,8 @@ public class ScheduledTask
             World.instance.allSites.Add(newSite);
             p.exploredSiteUUIDs.Add(newSite.uuid);
 
+            // TODO check if ship is wrecked.
+
             service.SendExcept(p.connectionID, Ascii.Box(otherPlayers));
             service.SendTo(p.connectionID, Ascii.Box(output));
         }

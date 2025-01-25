@@ -5,46 +5,46 @@ public class Commands
 {
     
     [GameCommand("Chat with all other users.")]
-    public static void Say(Player p, GameHub game, string args)
+    public static void Say(Player p, GameUpdateService game, string args)
     {
         game.SendAll($"{p.name}: " + args);
     }
     
     [GameCommand("Share an image with all users.")]
-    public static void ShareImage(Player p, GameHub game, string args)
+    public static void ShareImage(Player p, GameUpdateService game, string args)
     {
         if (Uri.TryCreate(args, UriKind.Absolute, out Uri? uriResult) &&
             (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps)) {
             game.SendImage(uriResult.ToString());
         } else {
-            game.Send($"Hey {p.name}, the provided input is not a valid URL: {args}");
+            game.Send(p, $"Hey {p.name}, the provided input is not a valid URL: {args}");
         }
     }
     [GameCommand("Share an sound with all users.")]
-    public static void PlaySound(Player p, GameHub game, string args)
+    public static void PlaySound(Player p, GameUpdateService game, string args)
     {
         if (Uri.TryCreate(args, UriKind.Absolute, out Uri? uriResult) &&
             (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps)) {
             game.SendSound(uriResult.ToString());
         } else {
-            game.Send($"Hey {p.name}, the provided input is not a valid URL: {args}");
+            game.Send(p, $"Hey {p.name}, the provided input is not a valid URL: {args}");
         }
     }
 
     [GameCommand("See this help message.")]
-    public static void Help(Player p, GameHub game, string args)
+    public static void Help(Player p, GameUpdateService game, string args)
     {
         string msg = "These are the commands you can type:\n";
         foreach(var method in InvokeCommand.Commands.Keys){
             msg += $"    [salmon]{method}[/salmon] - {InvokeCommand.HelpTexts[method + ""]} \n";
         }
 
-        game.Send(msg);
+        game.Send(p, msg);
 
     }
 
     [GameCommand("View some general stats about the world.")]
-    public static void WorldStatus(Player p, GameHub game, string args)
+    public static void WorldStatus(Player p, GameUpdateService game, string args)
     {
         string output = "";
 
@@ -55,12 +55,12 @@ public class Commands
         output += " Planets Discovered: " + World.instance.allSites.Count() + "\n";
         output += " Scheduled Tasks: " + World.instance.allScheduledActions.Count() + "\n";
 
-        game.Send(output);
+        game.Send(p, output);
     }
 
 
     [GameCommand("View your empire's status.")]
-    public static void Status(Player p, GameHub game, string args)
+    public static void Status(Player p, GameUpdateService game, string args)
     {
         p.tutorialStep = Math.Min(1, p.tutorialStep);
         string output = "";
@@ -73,7 +73,7 @@ public class Commands
 
         output += ShowSites(4, p, 0);
         output += $"===== Unresearched Relics [{p.relicIDs.Count}] =====\n";
-        game.Send(output);
+        game.Send(p, output);
     }
 
     private static string ShowShips(int showMax, Player p, int start)
@@ -134,7 +134,7 @@ public class Commands
     }
 
     [GameCommand("View and interact with your empire's ships.")]
-    public static void Ship(Player p, GameHub game, string args)
+    public static void Ship(Player p, GameUpdateService game, string args)
     {
         if(CheckArg("explore", ref args)){
             ShipExplore(p, game, args);
@@ -157,10 +157,89 @@ public class Commands
         s += " [salmon]ship explore 0[/salmon] - Send your first ship to explore.\n";
         s += " [salmon]ship rename 0 Big Bertha[/salmon] - Rename your first ship to 'Big Bertha'\n";
 
-        game.Send(s);
+        game.Send(p, s);
     }
 
-    private static void ShipExplore(Player p, GameHub game, string args)
+    [GameCommand("List who has recently been online")]
+    public static void Who(Player p, GameUpdateService game, string args)
+    {
+        var sortedPlayers = World.instance.allPlayers.OrderByDescending(p => p.lastActivity);
+
+        int start = 0;
+        int.TryParse(args, out start);
+
+        var now = DateTime.Now;
+        string s = $"===== Players ({sortedPlayers.Count()}) =====\n";
+
+        // Display each player's name and how recently they were active
+        int count = 0;
+        int showMax = 20;
+        foreach (var player in sortedPlayers)
+        {
+            if(count < start) {
+                count += 1;
+                continue;
+            }
+            if(count > showMax){
+                s += $"     ... {count-showMax} more players. (type [magenta]who {count}[/magenta] to start at that item)";
+                break;
+            }
+
+            TimeSpan duration = now - player.lastActivity;
+            string timeAgo;
+
+            if (duration.TotalMinutes < 60) {
+                timeAgo = $"{(int)duration.TotalMinutes} min ago";
+            } else if (duration.TotalHours < 24) {
+                timeAgo = $"{(int)duration.TotalHours} hr ago";
+            } else {
+                timeAgo = $"{(int)duration.TotalDays} days ago";
+            }
+            count += 1;
+            s += ($"{player.name} - {timeAgo}\n");
+        }
+
+        game.Send(p, s);
+    }
+
+
+    [GameCommand("Check your messages and invitations from other players")]
+    public static void Message(Player p, GameUpdateService game, string args)
+    {
+        // Sort messages: most recent sent date first, unread messages first
+        var sortedMessages = p.messages
+            .OrderByDescending(m => m.sent)
+            .ThenBy(m => m.read.HasValue);
+
+        int.TryParse(args, out int start);
+
+        string s = $"===== Messages ({sortedMessages.Count()}) =====\n";
+
+        // Display each player's name and how recently they were active
+        int count = 0;
+        int showMax = 20;
+        DateTime now = DateTime.Now;
+        foreach (var message in sortedMessages)
+        {
+            if(count < start) {
+                count += 1;
+                continue;
+            }
+            if(count > showMax){
+                s += $"     ... {count-showMax} more messages. (type [magenta]message {count}[/magenta] to start at that item)";
+                break;
+            }
+            // Determine if the message is read or unread
+            string status = message.read.HasValue ? "<read>" : "[cyan]<unread>[/cyan]";
+            string from = World.instance.GetPlayer(message.fromPlayerUUID)!.name;
+            // Display the message details
+            s += $"[{Ascii.TimeAgo(now - message.sent)}] {status} - {message.type} from {from}: {Ascii.Shorten(message.contents, 20)}";
+        }
+
+        game.Send(p, s);
+    }
+
+    private static void ShipExplore(Player p, GameUpdateService game, string args)
     {
         int index = 0;
         if(int.TryParse(args, out index)){
@@ -174,28 +253,21 @@ public class Commands
                 int ticks = 600 / World.instance.timescale;
                 output += $" Exploration mission will take {ticks} seconds.";
 
-                game.Send(output);
-                game.SetCaptivePrompt(p, "Do you want to start this mission? (y/n)",
-                (string response) => {
-                    string r = response.ToLower();
-                    if(r == "y" || r == "n"){
-                        if(r == "y")
-                            StartExploration(ticks, p, s);
-                        else
-                            game.Send("Exploration canceled.");
-                        return true;
-                    }else{
-                        return false;
-                    }
+                game.Send(p, output);
+                game.SetCaptiveYNPrompt(p, "Do you want to start this mission? (y/n)", (bool response) => {
+                    if(response)
+                        StartExploration(ticks, p, s);
+                    else
+                        game.Send(p, "Exploration canceled.");
                 });
             }else{
                 output += $" Ship is already on a mission!";
-                game.Send(output);
+                game.Send(p, output);
             }
             return;
 
         }
-        game.Send($"Invalid ship exploration args [{args}]");
+        game.Send(p, $"Invalid ship exploration args [{args}]");
 
     }
 
@@ -215,46 +287,46 @@ public class Commands
 
     }
 
-    private static void ShipRename(Player p, GameHub game, string args)
+    private static void ShipRename(Player p, GameUpdateService game, string args)
     {
         int index;
         string indexS = PullArg(ref args);
         if(int.TryParse(indexS, out index)){
             Ship ship = p.ships[index];
             ship.name = args;
-            game.Send($"Ship {index} renamed to {args}");
+            game.Send(p, $"Ship {index} renamed to {args}");
         }else{
-            game.Send($"Bad index for rename [{indexS}]");
+            game.Send(p, $"Bad index for rename [{indexS}]");
         }
 
     }    
-    private static void ShipView(Player p, GameHub game, string args)
+    private static void ShipView(Player p, GameUpdateService game, string args)
     {
         int index;
         string indexS = PullArg(ref args);
         if(int.TryParse(indexS, out index)){
             Ship ship = p.ships[index];
 
-            game.Send(ship.ShortLine());
-            game.Send(ship.LongLine());
+            game.Send(p, ship.ShortLine());
+            game.Send(p, ship.LongLine());
         }else{
-            game.Send($"Bad index for ship viewing [{indexS}]");
+            game.Send(p, $"Bad index for ship viewing [{indexS}]");
         }
     }
 
     [GameCommand("View and interact with your planetary sites.")]
-    public static void Site(Player p, GameHub game, string args)
+    public static void Site(Player p, GameUpdateService game, string args)
     {
         if(CheckArg("view", ref args)){
             SiteView(p, game, args);
             return;
         }
         if(CheckArg("invite", ref args)){
-            ShipExplore(p, game, args);
+            SiteInvite(p, game, args);
             return;
         }
         if(CheckArg("construct", ref args)){
-            ShipRename(p, game, args);
+            SiteConstruct(p, game, args);
             return;
         }
 
@@ -266,23 +338,85 @@ public class Commands
         s += " [salmon]site invite 0[/salmon] - Invite another player to join you on your site.\n";
         s += " [salmon]site construct 0[/salmon] - View construction options for this site\n";
 
-        game.Send(s);
+        game.Send(p, s);
     }
 
-    private static void SiteView(Player p, GameHub game, string args)
+    private static void SiteView(Player p, GameUpdateService game, string args)
     {
         int index;
         string indexS = PullArg(ref args);
         if(int.TryParse(indexS, out index)){
             ExploredSite site = p.GetExploredSites()[index];
 
-            game.Send(site.ShortLine());
-            game.Send(site.LongLine());
+            game.Send(p, site.ShortLine());
+            game.Send(p, site.LongLine());
 
         }else{
-            game.Send($"Bad index for site viewing [{indexS}]");
+            game.Send(p, $"Bad index for site viewing [{indexS}]");
         }
+    }
+
+    
+    
+    private static void SiteInvite(Player p, GameUpdateService game, string args)
+    {
+        int index;
+        string indexS = PullArg(ref args);
+        if(int.TryParse(indexS, out index)){
+            ExploredSite site = p.GetExploredSites()[index];
+
+            string s = "";
+            s+= site.ShortLine();
+            s+= site.LongLine();
+            s+= "By inviting someone this planet, they will be able to build there too.\n It doesn't use up any of your space.\n";
+
+            game.Send(p, s);
+
+
+            game.SetCaptivePrompt(p, "Who do you want to invite? (or [red]cancel[/red] or [red]who[/red])",
+                (string response) => {
+                    string r = response.ToLower();
+                    // try to find a player name
+                    Player? found = World.instance.GetPlayerByName(r);
+                    if(r == "cancel" || r == "who" || found != null){
+                        if(found != null) 
+                            Invite(p, game, found, site);
+                        if(r == "who")
+                            Who(p, game, args);
+                        if(r == "cancel")
+                            game.Send(p, "Invite canceled.");
+                        return true;
+                    }else{
+                        return false;
+                    }
+                });
+
+        }else{
+            game.Send(p, $"Bad index for site viewing [{indexS}]");
+        }
+    }
+
+    private static void Invite(Player p, GameUpdateService game, Player found, ExploredSite site)
+    {
+        game.Send(p, $"You are inviting {found.name} to {site.name}.");
+        game.SetCaptivePrompt(p, "If you want to include a message, type it now.",
+            (string response) => {
+                Message m = new Message(p, global::Message.MessageType.Invitation, response);
+                m.invitationSiteUUID = site.uuid;
+                found.messages.Add(m);
+
+                game.SendTo(found.connectionID, $"You have a new message from {p.name}!" );
+
+                return true;
+            });
 
     }
 
+
+    private static void SiteConstruct(Player p, GameUpdateService game, string args)
+    {
+        
+            game.Send(p, $"ahhhhh");
+        
+    }
 }

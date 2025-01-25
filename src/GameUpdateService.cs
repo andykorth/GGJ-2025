@@ -21,6 +21,18 @@ public class GameUpdateService : BackgroundService
         }
     }
 
+    public void Send(Player p, string line){
+       _hubContext.Clients.Client(p.connectionID).SendAsync("ReceiveLine", line);
+    }
+
+    public void SendImage(string url){
+        _hubContext.Clients.All.SendAsync("ReceiveImage", url);
+    }
+
+    public void SendSound(string url){
+        _hubContext.Clients.All.SendAsync("PlaySound", url);
+    }
+
     public void SendAll(string line){
         _hubContext.Clients.All.SendAsync("ReceiveLine", line);
     }
@@ -31,4 +43,37 @@ public class GameUpdateService : BackgroundService
         _hubContext.Clients.Client(connectionID).SendAsync("ReceiveLine", line);
     }
 
+
+    internal void SetCaptivePrompt(Player p, string message, Func<string, bool> promptFunc)
+    {
+        Send(p, message);
+        p.captivePrompt = promptFunc;
+        p.captivePromptMsg = message;
+    }
+    internal void SetCaptiveYNPrompt(Player p, string message, Action<bool> responseFunc)
+    {
+        Send(p, message);
+        p.captivePrompt = (string r) => {
+            if(r == "y" || r == "n"){
+                responseFunc(r == "y");
+                return true;
+            }else{
+                return false;
+            }
+        };
+        p.captivePromptMsg = message;
+    }
+
+    public void InvokeCaptivePrompt(Player p, string playerInput)
+    {
+        bool b = p.captivePrompt!(playerInput);
+        if(b){
+            // done with captive prompt!
+            p.captivePrompt = null;
+            p.captivePromptMsg = null;
+        }else{
+            // repeat the prompt, they did it wrong.
+            Send(p, p.captivePromptMsg!);
+        }
+    }
 }

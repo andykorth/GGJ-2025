@@ -37,29 +37,29 @@ public class InvokeCommand
         Log.Info("Found commands: " + Commands.Count);
     }
 
-    internal static void Invoke(Player p, GameHub game, string command, string args)
+    internal static void Invoke(Player p, GameUpdateService game, string command, string args)
     {
         if (Commands.TryGetValue(command.ToLower(), out var method))
         {
             try {
-                game.Send($"[magenta]>{command}[/magenta] {args}");
+                game.Send(p, $"[magenta]>{command}[/magenta] {args}");
                 method.Invoke(null, new object[] { p, game, args });
             }
             catch (Exception ex) {
                 if(ex.InnerException != null){
-                    game.Send($"Error executing command [{command}]: {ex.InnerException!.Message}");
-                    game.Send(ex!.InnerException!.StackTrace!);
+                    game.Send(p, $"Error executing command [{command}]: {ex.InnerException!.Message}");
+                    game.Send(p, ex!.InnerException!.StackTrace!);
                     Log.Error(ex.InnerException.ToString());
                 }else{
-                    game.Send($"Error executing command [{command}]: {ex.Message}");
-                    game.Send(ex.StackTrace!);
+                    game.Send(p, $"Error executing command [{command}]: {ex.Message}");
+                    game.Send(p, ex.StackTrace!);
                     Log.Error(ex.ToString());
                 }
             }
             return;
         }
 
-        game.Send($"Command [red]{command}[/red] not recognized. Type help");
+        game.Send(p, $"Command [red]{command}[/red] not recognized. Type help");
     }
 
 }

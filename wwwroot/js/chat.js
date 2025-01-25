@@ -73,7 +73,7 @@ function SendCurrentMessage(){
 	
 	if(message === "") return;
 
-    connection.invoke("SendMessage", user, message).catch(function (err) {
+    connection.invoke("PlayerSendCommand", user, message).catch(function (err) {
         return console.error(err.toString());
     });
 	// clear the field and refocus it.

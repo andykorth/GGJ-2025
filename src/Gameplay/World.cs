@@ -29,6 +29,10 @@ public class World
 		instance.UpdateInstance();
 	}
 
+	public GameUpdateService GetService(){
+		return service;;
+	}
+
 	public void UpdateInstance(){
 		if(ticks % 10 == 0){
 			SaveWorld();
@@ -115,6 +119,12 @@ public class World
         return allPlayers.Find(x => x.uuid == playerUUID);
     }
 
+	internal Player? GetPlayerByName(string r)
+    {
+        return allPlayers.Find(x => x.name == r);
+    }
+
+
     internal Ship? GetShip(Player p, string? shipUUID)
     {
         return p.ships.Find(x => x.uuid == shipUUID);
@@ -124,6 +134,7 @@ public class World
     {
         return allSites.Find(x => x.uuid == uuid);
     }
+
 
     #endregion
 

@@ -1,14 +1,12 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.SignalR;
 
 public class GameHub : Hub
 {
-    // it is slightly naughty to have a static list here, but Hub instances are transient. This will persist
-    // fine until you put your game in a giant distributed datacenter. But then the whole thing won't work anyway.
-    public static List<Player> loggedInPlayers = new List<Player>();
 
-    // Called when a player sends a message
-    public void SendMessage(string playerName, string message)
+    // Called when a player types something.
+    public void PlayerSendCommand(string playerName, string message)
     {
         if(string.IsNullOrEmpty(playerName)){
             Send("First, enter your name above.");
@@ -16,35 +14,24 @@ public class GameHub : Hub
         }
 
         Player p = RetrievePlayer(playerName, GetContext());
-
+        p.lastActivity = DateTime.Now;
+        var service = World.instance.GetService();
+        
         // check if the player has a captive prompt. If so, run that.
         if(p.captivePrompt != null){
             Log.Info($"[{playerName}] (captiveprompt): [{message}]");
-            InvokeCaptivePrompt(p, message);
+            service.InvokeCaptivePrompt(p, message);
         }else{
             // run the general command entry.
             var m = message.Split(" ", 2, StringSplitOptions.TrimEntries);
-            InvokeCommand.Invoke(p, this, m[0], m.Length > 1 ? m[1] : "");
+            InvokeCommand.Invoke(p, service, m[0], m.Length > 1 ? m[1] : "");
 
             Log.Info($"[{playerName}]: [{m[0]}] - [{(m.Length > 1 ? m[1] : "")}]");
         }
 
     }
-
-    public void SendAll(string line){
-        Clients.All.SendAsync("ReceiveLine", line);
-    }
-
     public void Send(string line){
         Clients.Caller.SendAsync("ReceiveLine", line);
-    }
-
-    public void SendImage(string url){
-        Clients.All.SendAsync("ReceiveImage", url);
-    }
-
-    public void SendSound(string url){
-        Clients.All.SendAsync("PlaySound", url);
     }
 
     private HubCallerContext GetContext()
@@ -115,26 +102,6 @@ Try '[red]help[/red]' to get started.
         ConnectedClients.TryRemove(Context.ConnectionId, out _);
         Log.Info($"Client disconnected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");
         return base.OnDisconnectedAsync(exception);
-    }
-
-    internal void SetCaptivePrompt(Player p, string message, Func<string, bool> value)
-    {
-        Send(message);
-        p.captivePrompt = value;
-        p.captivePromptMsg = message;
-    }
-
-    private void InvokeCaptivePrompt(Player p, string playerInput)
-    {
-        bool b = p.captivePrompt!(playerInput);
-        if(b){
-            // done with captive prompt!
-            p.captivePrompt = null;
-            p.captivePromptMsg = null;
-        }else{
-            // repeat the prompt, they did it wrong.
-            Send(p.captivePromptMsg!);
-        }
     }
 
 }
