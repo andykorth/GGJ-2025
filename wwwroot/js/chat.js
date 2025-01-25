@@ -43,6 +43,15 @@ connection.on("ReceiveImage", function (imageUrl) {
     ScrollToBottom();
 });
 
+connection.on("PlaySound", function (soundURL) {
+    var audio = new Audio(soundURL);
+    audio.play();
+
+    ScrollToBottom();
+});
+
+
+
 function ScrollToBottom(){
     const scrollBox = document.querySelector('.scroll-box');
     scrollBox.scrollTop = scrollBox.scrollHeight;

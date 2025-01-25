@@ -22,6 +22,16 @@ public class Commands
             game.Send($"Hey {p.name}, the provided input is not a valid URL: {args}");
         }
     }
+    [GameCommand("Share an sound with all users.")]
+    public static void PlaySound(Player p, GameHub game, string args)
+    {
+        if (Uri.TryCreate(args, UriKind.Absolute, out Uri? uriResult) &&
+            (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps)) {
+            game.SendSound(uriResult.ToString());
+        } else {
+            game.Send($"Hey {p.name}, the provided input is not a valid URL: {args}");
+        }
+    }
 
     [GameCommand("See this help message.")]
     public static void Help(Player p, GameHub game, string args)

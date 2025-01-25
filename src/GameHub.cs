@@ -35,6 +35,10 @@ public class GameHub : Hub
         Clients.All.SendAsync("ReceiveImage", url);
     }
 
+    public void SendSound(string url){
+        Clients.All.SendAsync("PlaySound", url);
+    }
+
     private Player RetrievePlayer(string playerName)
     {
         Player? found = loggedInPlayers.FirstOrDefault(x => x.name == playerName);
