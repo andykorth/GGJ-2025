@@ -1,10 +1,32 @@
-using System;
-using System.Collections.Concurrent;
-using System.IO.IsolatedStorage;
-using System.Runtime.CompilerServices;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.SignalR;
-using Newtonsoft.Json;
+
+public enum MatType{
+	Production, RetailGoods, Services, Mining, Agricultural, Aquaculture, Salvage
+}
+
+public class Material
+{
+	public string uuid;
+	public string name;
+	public MatType type;
+	public string inventedByPlayerUUID;
+	public DateTime inventedDate;
+	public float rarity;
+
+	public Material(){
+		// newtonsoft
+	}
+
+	public static Material Create(string name, float rarity, MatType type, string inventedByPlayerUUID = ""){
+		Material m = new Material();
+        m.uuid = System.Guid.NewGuid().ToString();
+		m.name = name;
+		m.rarity = rarity;
+		m.type = type;
+		m.inventedByPlayerUUID = inventedByPlayerUUID;
+		m.inventedDate = DateTime.Now;
+		return m;
+	}
+}
 
 public class World
 {
@@ -17,11 +39,13 @@ public class World
 	public List<ExploredSite> allSites;
 	public List<ShipDesign> allShipDesigns;
 	public List<ScheduledTask> allScheduledActions;
+	public List<Material> allMats;
 
 	public long ticks = 0; // 2^64 seconds is enough time for the rest of the universe
     public int timescale = 1;
 
     private GameUpdateService service;
+
 
     public static void Update(GameUpdateService service)
     {	
@@ -63,12 +87,28 @@ public class World
 
 	#region  Save and load
 
+	public void Migrate(){
+		if(allMats == null){
+			allMats = new List<Material>();
+		}
+		void AddIfNeeded(string name, float rarity, MatType type) {
+			if(allMats.Find(m => m.name == name) == null){
+				allMats.Add(Material.Create(name, rarity, type));
+			}
+		}	
+
+		AddIfNeeded("Iron Ore", 10f, MatType.Mining);
+		AddIfNeeded("Cobalt Ore", 1.8f, MatType.Mining);
+		AddIfNeeded("Platinum Group Ore", 0.3f, MatType.Mining);
+	}
+
 	public const string FILENAME = "../world.json";
 
 	public static void CreateOrLoad(){
 		Log.Info("Create or load world...");
 		if(File.Exists(FILENAME)){
 			instance = JSONUtilities.Deserialize<World>(FILENAME);
+			instance.Migrate();
 			foreach(var item in instance.allPlayers){
 				item.Migrate();
 			}
@@ -94,8 +134,8 @@ public class World
 		if(File.Exists(FILENAME + "tmp")){
 			if(File.Exists(FILENAME)){
 				// retain previous version so users can manually restore broken saves.
-				if(File.Exists(FILENAME +"bk")){
-					File.Delete(FILENAME + "bk");
+				if(File.Exists(FILENAME + "bk" )) {
+					File.Delete(FILENAME + "bk" );
 				}
 				File.Move(FILENAME, FILENAME + "bk");
 			}
@@ -113,7 +153,7 @@ public class World
     internal void Schedule(ScheduledTask st)
     {
         allScheduledActions.Add(st);
-		// todo could sort less. could make a heap.
+		// todo could sort less often. could make a heap.
 		allScheduledActions.OrderBy((task) => task.completedOnTick);
     }
 
@@ -136,6 +176,11 @@ public class World
     internal ExploredSite? GetSite(string uuid)
     {
         return allSites.Find(x => x.uuid == uuid);
+    }
+
+    internal ScheduledTask FindScheduledTask(string associatedScheduledTaskUUID)
+    {
+        return allScheduledActions.Find(x => x.uuid == associatedScheduledTaskUUID)!;
     }
 
 

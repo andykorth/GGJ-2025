@@ -44,7 +44,7 @@ public class InvokeCommand
         if (Commands.TryGetValue(command.ToLower(), out var method))
         {
             try {
-                game.Send(p, $"[magenta]>{command}[/magenta] {args}");
+                game.Send(p, $"[magenta]>{command}[/magenta] {Ascii.WrapColor(args, "DarkMagenta")}");
                 method.Invoke(null, new object[] { p, game, args });
             }
             catch (Exception ex) {

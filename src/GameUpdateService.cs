@@ -70,8 +70,9 @@ public class GameUpdateService : BackgroundService
         p.captivePromptMsg = message;
     }
 
-    public void InvokeCaptivePrompt(Player p, string playerInput)
-    {
+    public void InvokeCaptivePrompt(Player p, string playerInput) {
+        Send(p, $"[yellow]>[/yellow][magenta]>{playerInput}[/magenta]");
+
         bool b = p.captivePrompt!(playerInput);
         if(b){
             // done with captive prompt!

@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.SignalR;
 
 public class ScheduledTask
 {
+    public string uuid;
     public long completedOnTick;
+    public int originalDuration;
 
     public string playerUUID;
     public string targetUUID;
@@ -12,35 +14,53 @@ public class ScheduledTask
     public int seed;
     public string string1;
     public BuildingType buildingType;
+    public float materialAmount;
+    public string materialUUID;
 
     public ScheduledTask(){
         // for json.net
     }
 
-    public ScheduledTask(int duration, Player? p, Ship? s, ScheduledAction task)
+    public ScheduledTask(int duration, Player? p, ScheduledAction task){
+        this.task = task;
+        this.uuid = System.Guid.NewGuid().ToString();
+        if(p!=null) this.playerUUID = p.uuid;
+        long now = World.instance.ticks;
+        this.originalDuration = duration;
+        this.completedOnTick = now + (long) duration;
+
+    }
+
+    public ScheduledTask(int duration, Player? p, Ship? s, ScheduledAction task) : this(duration, p, task)
     {
         // store a seed so the results are reproducable
         seed = new Random().Next();
-        long now = World.instance.ticks;
-        completedOnTick = now + (long) duration;
 
-        if(p!=null) this.playerUUID = p.uuid;
         if(s!=null) this.targetUUID = s.uuid;
-        this.task = task;
     }
     
-    public ScheduledTask(int duration, Player? p, ExploredSite? s, ScheduledAction task)
+    public ScheduledTask(int duration, Player? p, ExploredSite? s, ScheduledAction task) : this(duration, p, task)
     {
         // store a seed so the results are reproducable
         seed = new Random().Next();
-        long now = World.instance.ticks;
-        completedOnTick = now + (long) duration;
 
-        if(p!=null) this.playerUUID = p.uuid;
         if(s!=null) this.targetUUID = s.uuid;
-        this.task = task;
     }
-    
+
+    public ScheduledTask(int duration, Player? p, Building? building, ScheduledAction task) : this(duration, p, task)
+    {
+        if(building!=null) this.targetUUID = building.uuid;
+    }
+
+    private void Reschedule(){
+        this.completedOnTick = this.originalDuration + World.instance.ticks;
+        World.instance.Schedule(this);
+    }
+
+    public long TicksRemaining(){
+        return this.completedOnTick - World.instance.ticks;
+    }
+
     public void InvokeAction(GameUpdateService service)
     {
         Player? p = null;
@@ -55,19 +75,28 @@ public class ScheduledTask
                 s = World.instance.GetShip(p, this.targetUUID);
             ExploreMission(service, p!, s!);
         }
-        if(task == ScheduledAction.SiteDevelopmentMission)
+        else if(task == ScheduledAction.SiteDevelopmentMission)
         {
             ExploredSite? s = null;
             if (p != null && targetUUID != null)
                 s = World.instance.GetSite(this.targetUUID);
             DevelopmentMission(service, p!, s!);
         }
-        if(task == ScheduledAction.SiteConstruction)
+        else if(task == ScheduledAction.SiteConstruction)
         {
             ExploredSite? s = null;
             if (p != null && targetUUID != null)
                 s = World.instance.GetSite(this.targetUUID);
             SiteConstruction(service, p!, s!);
+        }
+        else if(task == ScheduledAction.Production)
+        {
+            Building? s = null;
+            if (p != null && targetUUID != null)
+                s = p.FindBuilding(this.targetUUID);
+            Production(service, p!, s!);
+        }else{
+            Log.Error("Unimplemented scheduled task action: " + task);
         }
     }
 
@@ -146,7 +175,7 @@ public class ScheduledTask
 
         // TODO check if ship is wrecked.
 
-        service.SendExcept(p.connectionID, Ascii.Box(otherPlayers));
+        service.SendExcept(p.connectionID!, Ascii.Box(otherPlayers));
         service.Send(p, Ascii.Box(output, "blue"));
     }
 
@@ -158,7 +187,7 @@ public class ScheduledTask
         
         string otherPlayers = $"{p.name} has constructed a [cyan]{projectName}[/cyan]\n";
         otherPlayers += $"on {s.name}. The population is now {s.population}k";
-        service.SendExcept(p.connectionID, Ascii.Box(otherPlayers));
+        service.SendExcept(p.connectionID!, Ascii.Box(otherPlayers));
 
         string output = $"It is a glorious day on {s.name}!\n";
         output += $"The [cyan]{projectName}[/cyan] you funded is finally complete.\n";
@@ -185,8 +214,26 @@ public class ScheduledTask
 
         service.Send(p, Ascii.Box(output, "yellow"));
     }
+
+    private void Production(GameUpdateService service, Player player, Building building)
+    {
+		var site = World.instance.GetSite(building.siteUUID);
+		string siteName = Ascii.WrapColor(site!.name, site!.SiteColor());
+
+        Material m = World.instance.allMats.Find(m => m.uuid == this.materialUUID)!;
+        float quantity = this.materialAmount;
+
+        string s = $"-> {building.GetName()} on {siteName} has produced {quantity:0.00} {m.name} \n";
+        service.Send(player, s);
+
+        // requeue the task!
+        Reschedule();
+    }
+
+
+
 }
 
 public enum ScheduledAction{
-    ExplorationMission, SiteDevelopmentMission, SiteConstruction,
+    ExplorationMission, SiteDevelopmentMission, SiteConstruction, Production
 }

@@ -72,14 +72,10 @@ public class GameHub : Hub
     {
         ConnectedClients.TryAdd(Context.ConnectionId, Context.User?.Identity?.Name ?? "Anonymous");
         Log.Info($"Client connected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");
-        
+        var service = World.instance.GetService();
+        service.SendImage("AstroTycoon.png");
         Send(
 @"
-   ___       __             ______                      
-  / _ | ___ / /________    /_  __/_ _________  ___  ___ 
- / __ |(_--/ __/ __/ _ \    / / / // / __/ _ \/ _ \/ _ \
-/_/ |_/___/\__/_/  \___/   /_/  \_, /\__/\___/\___/_//_/
-                               /___/                    
 
 Astro Tycoon is a multiplayer space empire simulation game. Cooperate with other
 players to expand your empire, buy and sell your production, explore with spaceships, and

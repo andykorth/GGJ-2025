@@ -87,7 +87,7 @@ public class ExploredSite : IShortLine {
 			developmentIcon = "<[RebeccaPurple]&[/RebeccaPurple]>";
 		}
 		string classMessage = ClassString();
-		int buildingCount = this.GetBuildings(p).Count();
+		int buildingCount = this.GetBuildingsOnSite(p).Count();
 		string showIndex = index < 0 ? "" : index + ")";
 		return $"   {showIndex} {developmentIcon} {name,-15} - {classMessage,-18} {buildingCount} buildings. \n";
     }
@@ -102,7 +102,7 @@ public class ExploredSite : IShortLine {
 		}
 		string s = $"   Population: {population}k\n   Players: {playerCount}\n   Discovered by {World.instance.GetPlayer(discoveredByPlayerUUID)!.name} on {discoveredDate.ToString()}\n";
 		int count = 0;
-		foreach(Building b in GetBuildings(player)){
+		foreach(Building b in GetBuildingsOnSite(player)){
 			s += b.ShortLine(player, count);
 			count += 1;
 		}
@@ -110,7 +110,7 @@ public class ExploredSite : IShortLine {
 		return s;
     }
 
-    public IEnumerable<Building> GetBuildings(Player p)
+    public IEnumerable<Building> GetBuildingsOnSite(Player p)
     {
 		return p.buildings.Where((b) => b.siteUUID == this.uuid);
     }
@@ -120,8 +120,20 @@ public class ExploredSite : IShortLine {
         return 3;
     }
 
-
-
+    public List<(Material mat, float freq)> GetOres()
+    {
+		List<(Material, float)> matFreq = new List<(Material, float)>();
+        Random r = new Random((int) (1000* planetClass));
+		foreach(Material m in World.instance.allMats){
+			if(m.type == MatType.Mining){
+				if(r.NextDouble() > 0.3f){
+					float frequency = m.rarity * 0.6f + 0.8f * m.rarity * (float) r.NextDouble();
+					matFreq.Add((m, frequency));
+				}
+			}
+		}
+		return matFreq;
+    }
 }
 
 public enum BuildingType{
@@ -137,8 +149,9 @@ public class Building : IShortLine {
 	public BuildingType buildingType;
 	public int level;
 	public string name;
+    public string? associatedScheduledTaskUUID;
 
-	public string GetName(){
+    public string GetName(){
 		return name ?? buildingType.ToString();
 	}
 
@@ -152,6 +165,20 @@ public class Building : IShortLine {
 		this.buildingType = buildingType;
 		this.level = 0;
     }
+
+	public string GetColorTagName(int level)
+	{
+		return level switch
+		{
+			1 => "white",
+			2 => "cyan",
+			3 => "orchid",
+			4 => "yellow",
+			5 => "chartreuse",
+			6 => "RebeccaPurple",
+			_ => "grey" // Default case
+		};
+	}
 
     public string ShortLine(Player p, int index)
     {
@@ -181,14 +208,80 @@ public class Building : IShortLine {
 				break;
 		}
 		var site = World.instance.GetSite(this.siteUUID);
-		string productionMessage = " - asdf";
+		string productionMessage = GetProdMessage();
 		string showIndex = index < 0 ? "" : index + ")";
 		return $"   {showIndex} {developmentIcon} {GetName(),-20} {Ascii.WrapColor(site!.name, site!.SiteColor()), -20} {productionMessage}\n";
     }
 
+	public string GetProdMessage(){
+		if(associatedScheduledTaskUUID != null){
+			// look up task so we know if it's done or not
+			var task = World.instance.FindScheduledTask(associatedScheduledTaskUUID);
+			if(task == null || task.TicksRemaining() < -5){
+				Log.Error("Found a production orphan: " + associatedScheduledTaskUUID);
+				this.associatedScheduledTaskUUID = null;
+				return "Idle";
+			}else{
+				return $"Working ({task.TicksRemaining()} s)";
+			}
+		}else{
+			return "Idle";
+		}
+
+	}
+
     internal string LongLine()
     {
-		return "";
+		var site = World.instance.GetSite(this.siteUUID);
+		string siteName = Ascii.WrapColor(site!.name, site!.SiteColor());
+		string productionMessage = GetProdMessage();
+
+		string s = "";
+		s += Ascii.Header(this.GetName(), 40, GetColorTagName(this.level));
+		s += $"Building Type: {this.buildingType,-20} Upgrade Level: {this.level}\n";
+		s += $"Site:          {siteName,-20} {productionMessage}\n";
+
+		if(buildingType == BuildingType.Mine){
+			s += "\nAvailable Ores:\n";
+			int count = 0;
+			foreach(var pair in site.GetOres()){
+				s += $" {count}) {pair.mat.name,-20} Richness: {pair.freq:0.00}\n";
+				count += 1;
+			}
+			
+		}else {
+			s += "\nProduction Options:\n";
+
+		} 
+
+
+		return s;
     }
 
+    internal void StartProd(Player p, GameUpdateService game, Building b, int index)
+    {
+		var site = World.instance.GetSite(this.siteUUID);
+		string siteName = Ascii.WrapColor(site!.name, site!.SiteColor());
+		if(buildingType == BuildingType.Mine){
+			
+			(var mat, float freq) =  site.GetOres()[index];
+			string s = $"Start to mine {mat.name} in {b.GetName()} on {siteName}\n";
+
+			int duration = 60 * 60 / World.instance.timescale;
+
+			ScheduledTask st = new ScheduledTask(duration, p, b, ScheduledAction.Production);
+			st.materialUUID = mat.uuid;
+			st.materialAmount = freq;
+	        World.instance.Schedule(st);
+
+			s+= $"Each hour, this will produce {freq:0.00} units of {mat.name}.";
+
+			game.Send(p, Ascii.Box(s, "green"));
+
+			b.associatedScheduledTaskUUID = st.uuid;
+			
+		}else {
+
+		} 
+    }
 }

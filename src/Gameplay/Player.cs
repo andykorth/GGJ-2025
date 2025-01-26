@@ -111,6 +111,11 @@ public class Player : IShortLine
 		TimeSpan duration = DateTime.Now - this.lastActivity;
 		return $"{this.name} - {Ascii.TimeAgo(duration)}\n";
     }
+
+    internal Building? FindBuilding(string targetUUID)
+    {
+        return buildings.Find(b => b.uuid == targetUUID);
+    }
 }
 
 public class Relic : IShortLine

@@ -36,7 +36,7 @@ public class Commands
     {
         bool showAll = args.Contains("all");
 
-        string msg = "These are the commands you can type: (To see them all, try [red]help all[/red])\n";
+        string msg = "These are the commands you can type: (To see them all, try [salmon]help all[/salmon])\n";
         foreach(var method in InvokeCommand.Commands.Keys){
             var a = InvokeCommand.HelpAttrs[method + ""];
             if(showAll || !a.normallyHidden)
@@ -58,6 +58,7 @@ public class Commands
         output += " Players Joined: " + World.instance.allPlayers.Count() + "\n";
         output += " Planets Discovered: " + World.instance.allSites.Count() + "\n";
         output += " Scheduled Tasks: " + World.instance.allScheduledActions.Count() + "\n";
+        output += " Materials: " + World.instance.allMats.Count() + "\n";
 
         game.Send(p, output);
     }
@@ -272,8 +273,8 @@ public class Commands
         }else{
             game.Send(p, $"Bad index for rename [{indexS}]");
         }
-
     }    
+
     private static void ShipView(Player p, GameUpdateService game, string args)
     {
         int index;
@@ -333,7 +334,7 @@ public class Commands
 
     private static void MessageSend(Player p, GameUpdateService game, string args)
     {
-        game.SetCaptivePrompt(p, "Who do you want to message? (or [red]cancel[/red] or [red]who[/red])",
+        game.SetCaptivePrompt(p, "Who do you want to message? (or [salmon]cancel[/salmon] or [salmon]who[/salmon])",
             (string response) => {
                 string r = response.ToLower();
                 // try to find a player name
@@ -440,7 +441,7 @@ public class Commands
             game.Send(p, s);
 
 
-            game.SetCaptivePrompt(p, "Who do you want to invite? (or [red]cancel[/red] or [red]who[/red])",
+            game.SetCaptivePrompt(p, "Who do you want to invite? (or [salmon]cancel[/salmon] or [salmon]who[/salmon])",
                 (string response) => {
                     string r = response.ToLower();
                     // try to find a player name
@@ -570,7 +571,7 @@ public class Commands
         if(int.TryParse(indexS, out index)){
             ExploredSite site = p.GetExploredSites()[index];
             int totalSlots = site.GetBuildingSlots();
-            int usedSlots = site.GetBuildings(p).Count();
+            int usedSlots = site.GetBuildingsOnSite(p).Count();
 
             string s = "";
             s+= ((IShortLine)site).ShortLine(p, -1);
@@ -584,7 +585,7 @@ public class Commands
                     s += "\n";
                 }
                 game.Send(p, s);
-                game.SetCaptivePrompt(p, $"Which do you want to build: [red]0-{choiceCount}[/red] (or [red]cancel[/red])",
+                game.SetCaptivePrompt(p, $"Which do you want to build: [salmon]0-{choiceCount}[/salmon] (or [salmon]cancel[/salmon])",
                     (string response) => {
                         string r = response.ToLower();
                         int index = -1;
@@ -731,23 +732,29 @@ public class Commands
     [GameCommand("Enter the production menu.")]
     public static void Prod(Player p, GameUpdateService game, string args)
     {
-        // if(CheckArg("view", ref args)){
-        //     SiteView(p, game, args);
-        //     return;
-        // }
-        
+        ProdList(p, game, args);
 
-        int start = 0;
-        int.TryParse(args, out start);
-        string s= ShowProdBuildings(20, p, start);
+        game.SetCaptivePrompt(p, $"Enter production command (or [salmon]exit[/salmon]):",
+            (string response) => {
+                string command = PullArg(ref response).ToLower();
 
-        s += Ascii.Header($"Site Commands", 40);
-        s += " [salmon]site view 0[/salmon] - View details of your first planetary site.\n";
-        s += " [salmon]site invite 0[/salmon] - Invite another player to join you on your site.\n";
-        s += " [salmon]site develop 0[/salmon] - Start a development project to increase the population for the entire planet\n";
-        s += " [salmon]site construct 0[/salmon] - View building construction options\n";
+                if(command == "exit"){
+                    game.Send(p, "Exited Production Menu.");
+                    return true;
+                }else if(command == "edit"){
+                    ProdEdit(p, game, response);
+                    return false; // keep them in the menu.
+                }else if(command == "list"){
+                    ProdList(p, game, response);
+                    return false; // keep them in the menu.
+                }else if(command == "view"){
+                    ProdView(p, game, response);
+                    return false; // keep them in the menu.
+                }
 
-        game.Send(p, s);
+                return false;
+                
+            });
     }
 
     private static string ShowProdBuildings(int showMax, Player p, int start)
@@ -757,5 +764,118 @@ public class Commands
         return ShowList(list.Cast<IShortLine>().ToList(), "Production Buildings", "prod", showMax, p, start);
     }
 
+    private static T? PullIndexArg<T>(Player p, GameUpdateService game, ref string args, List<T> list){
+        string indexS = PullArg(ref args);
+        int index = -1;
+        if(int.TryParse(indexS, out index)){
+            if(index < 0 || index >= list.Count){
+                game.Send(p, $"Invalid range: [{indexS}] is not between {0} and {list.Count-1}, inclusive.");
+                return default(T);
+            }
+            return list[index];
+        }else{
+            game.Send(p, $"Bad index specified: [{indexS}] That should have been a number between {0} and {list.Count-1}, inclusive.");
+            return default(T);
+        }
+    }
+
+    private static void ProdList(Player p, GameUpdateService game, string args)
+    {
+        int start = 0;
+        int.TryParse(args, out start);
+        string s = ShowProdBuildings(20, p, start);
+
+        s += Ascii.Header($"Production Menu Commands", 40);
+        s += " [salmon]exit[/salmon] - Exit production menu.\n";
+        s += " [salmon]list[/salmon] - View list of all buildings again.\n";
+        s += " [salmon]view 0[/salmon] - View building details, and see what can be produced there.\n";
+        s += " [salmon]edit 0[/salmon] - Edit building production. (start/stop prod, rename, upgrade, remove)\n";
+        // s += " [salmon]rename 0 Potato Factory[/salmon] - Renames your first building to 'Potato Factory'.\n";
+
+        game.Send(p, s);
+    }   
+
+    private static void ProdView(Player p, GameUpdateService game, string args)
+    {
+        Building? b = PullIndexArg<Building>(p, game, ref args, p.buildings);
+        if(b != null){
+            string s = "";
+            s += b.LongLine();
+            game.Send(p, s);
+        }
+    }    
+
+    private static void ProdEdit(Player p, GameUpdateService game, string args)
+    {
+        Building? b = PullIndexArg<Building>(p, game, ref args, p.buildings);
+        if(b != null){
+            string s = "";
+            s += b.LongLine();
+            s += Ascii.Header($"Building Production Menu Commands", 40);
+            s += " [salmon]start 0[/salmon] - Start production on product 0.\n";
+            s += " [salmon]stop[/salmon] - Stop production on current product.\n";
+            s += " [salmon]exit[/salmon] - Exit building prod menu.\n";
+            s += " [salmon]view[/salmon] - Show building info again.\n";
+            s += " [salmon]destroy[/salmon] - Destroy this building (you can reuse the slot).\n";
+            s += " [salmon]rename Potato Factory[/salmon] - Renames this building to 'Potato Factory'.\n";
+            game.Send(p, s);
+
+            game.SetCaptivePrompt(p, $"Enter building production command (eg. [salmon]view[/salmon] or [salmon]exit[/salmon]):",
+                (string response) => {
+                    string command = PullArg(ref response).ToLower();
+
+                    if(command == "exit"){
+                        game.Send(p, "Exited Building Production Menu.");
+                        return true;
+                    }else if(command == "rename"){
+                        ProdRename(p, game, b, response);
+                        return false; // keep them in the menu.
+                    }else if(command == "start"){
+                        ProdStart(p, game, b, response);
+                        return false; // keep them in the menu.
+                    }else if(command == "stop"){
+                        ProdStop(p, game, b, response);
+                        return false; // keep them in the menu.
+                    }else if(command == "destroy"){
+                        ProdDestroy(p, game, b, response);
+                        return false; // keep them in the menu.
+                    }else if(command == "view"){
+                        // resend same string.
+                        game.Send(p, s);
+                        return false; // keep them in the menu.
+                    }
+
+                    return false;
+                    
+                });
+        }
+    }    
+
+    private static void ProdRename(Player p, GameUpdateService game, Building b, string args)
+    {
+        string oldName = b.GetName();
+        b.name = args;
+        game.Send(p, $"Building {oldName} renamed to {args}");
+    }   
+
+    private static void ProdDestroy(Player p, GameUpdateService game, Building b, string args)
+    {
+        p.buildings.Remove(b);
+        game.Send(p, $"Building {b.GetName()} destroyed!");
+    }   
+    private static void ProdStart(Player p, GameUpdateService game, Building b, string args)
+    {
+        int index;
+        string indexS = PullArg(ref args);
+        if(int.TryParse(indexS, out index)){
+            b.StartProd(p, game, b, index);
+        }else{
+            game.Send(p, $"Bad index {indexS}!");
+        }
+    }       
+    private static void ProdStop(Player p, GameUpdateService game, Building b, string args)
+    {
+        game.Send(p, $"not done!");
+    }   
 
 }

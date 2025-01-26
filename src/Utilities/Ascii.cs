@@ -17,6 +17,7 @@ public static class Ascii{
 
     public static string WrapColor(string v, string? color)
     {
+        if(string.IsNullOrEmpty(v)) return "";
         if(string.IsNullOrEmpty(color)){
             return v;
         }else{
