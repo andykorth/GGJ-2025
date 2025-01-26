@@ -127,4 +127,29 @@ public static string[] relicNames = new string[]
     "Crown of the Starborn"
 };
 
+public static string[] developmentProjects = new string[]
+{
+    "Hydroponic Farms",
+    "Fusion Reactor Grid",
+    "Atmospheric Stabilizers",
+    "Quantum Health Centers",
+    "AI-Driven Education",
+    "Maglev Transport Lines",
+    "Orbital Habitat Expansion",
+    "Holo-Theater Network",
+    "Terraforming Operations",
+    "Nanotech Waste Recycling",
+    "Genetic Diversity Vault",
+    "Cryogenic Medical Labs",
+    "Bio-Dome Construction",
+    "Subterranean Cities",
+    "Asteroid Mining Facility",
+    "Plasma Defense Array",
+    "Neural Link Uplink",
+    "Weather Control Stations",
+    "Interstellar Trade Nexus",
+    "Dark Matter Research Lab"
+};
+
+
 }

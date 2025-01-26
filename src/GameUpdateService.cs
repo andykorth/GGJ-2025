@@ -22,7 +22,9 @@ public class GameUpdateService : BackgroundService
     }
 
     public void Send(Player p, string line){
-       _hubContext.Clients.Client(p.connectionID).SendAsync("ReceiveLine", line);
+        var v = _hubContext.Clients.Client(p.connectionID);
+        if(v != null) // they  might be offline?
+            v.SendAsync("ReceiveLine", line);
     }
 
     public void SendImage(string url){

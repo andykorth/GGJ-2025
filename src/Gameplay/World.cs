@@ -121,7 +121,7 @@ public class World
 
 	internal Player? GetPlayerByName(string r)
     {
-        return allPlayers.Find(x => x.name == r);
+        return allPlayers.Find(x => x.name.ToLowerInvariant() == r.ToLowerInvariant());
     }
 
 

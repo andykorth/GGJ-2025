@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.SignalR;
 
 public class GameHub : Hub
