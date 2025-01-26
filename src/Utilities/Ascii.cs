@@ -3,6 +3,14 @@ using System.Text.RegularExpressions;
 
 public static class Ascii{
 
+    public static string Header(string title, int headerWidth)
+    {
+        int padding = headerWidth - title.Length;
+        int paddingLeft = padding / 2 - 1;
+        int paddingRight = padding - paddingLeft - 1;
+
+        return $"{new string('=', paddingLeft)} {title} {new string('=', paddingRight)}\n";
+    }
 
     public static string Box(string text)
     {        
@@ -56,6 +64,8 @@ public static class Ascii{
         }
         return input.Substring(0, maxLength) + "...";
     }
+
+
 
     public static string[] planetNames = new string[]
     {

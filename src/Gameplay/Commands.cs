@@ -99,24 +99,30 @@ public class Commands
         return output;
     }
 
-    private static string ShowSites(int showMax, Player p, int start)
+    private static string ShowList(List<IShortLine> list, string title, string command, int showMax, Player p, int start, int headerWidth = 40)
     {
-        string output = $"===== Discovered Sites [{p.exploredSiteUUIDs.Count}] =====\n";
+        string output = Ascii.Header($"{title} [{list.Count}]", headerWidth);
         int count = 0;
         
-        foreach (var site in p.GetExploredSites()){
+        foreach (var item in list){
             if(count < start) {
                 count += 1;
                 continue;
             }
             if(count > showMax){
-                output += $"     ... {count-showMax} more sites. (type [magenta]sites {count}[/magenta] to start at that item)";
+                output += $"     ... {count-showMax} more entries. (type [magenta]{command} {count}[/magenta] to start at that item)";
                 break;
             }
-            output += site.ShortLine(p, count);
+            output += item.ShortLine(p, count);
             count += 1;
         }
         return output;
+    }
+
+    private static string ShowSites(int showMax, Player p, int start)
+    {
+        var list = p.GetExploredSites();
+        return ShowList(list.Cast<IShortLine>().ToList(), "Discovered Sites", "site", showMax, p, start);
     }
 
     private static bool CheckArg(string check, ref string args){
@@ -347,7 +353,7 @@ public class Commands
             if(message.type == global::Message.MessageType.Invitation){
                 var site = World.instance.GetSite(message.invitationSiteUUID!);
                 s += $"[cyan]The message contains an Site Invitation to join {from} on {site!.name}:[/cyan]\n \n";
-                s += site.ShortLine(p);
+                s += ((IShortLine)site).ShortLine(p, -1);
                 // s += site.LongLine();
                 if(p.GetExploredSites().Contains(site)){
                     s += $"\n[red]But you are already on that planet![/red]\n";
@@ -452,7 +458,7 @@ public class Commands
         if(int.TryParse(indexS, out index)){
             ExploredSite site = p.GetExploredSites()[index];
 
-            game.Send(p, site.ShortLine(p));
+            game.Send(p, ((IShortLine)site).ShortLine(p, -1));
             game.Send(p, site.LongLine(p));
 
         }else{
@@ -470,7 +476,7 @@ public class Commands
             ExploredSite site = p.GetExploredSites()[index];
 
             string s = "";
-            s+= site.ShortLine(p);
+            s+= ((IShortLine)site).ShortLine(p, -1);
             // s+= site.LongLine();
             s+= "By inviting someone this planet, they will be able to build there too.\n It doesn't use up any of your space.\n";
 
@@ -537,7 +543,7 @@ public class Commands
             string projectName = Ascii.developmentProjects[nameIndex];
 
             string s = "";
-            s+= site.ShortLine(p);
+            s+= ((IShortLine)site).ShortLine(p, -1);
             // s+= site.LongLine();
             s+= $"{p.name}, current cash: {p.cash}\n";
             s+= $"A development project will add 10k citizens, and cost {developmentCost}.\n";
@@ -610,7 +616,7 @@ public class Commands
             int usedSlots = site.GetBuildings(p).Count();
 
             string s = "";
-            s+= site.ShortLine(p);
+            s+= ((IShortLine)site).ShortLine(p, -1);
             s+= site.LongLine(p);
             s+= $"Buildings: {usedSlots} / {totalSlots}\n";
             if(usedSlots < totalSlots){

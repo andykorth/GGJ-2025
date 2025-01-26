@@ -1,6 +1,10 @@
 
 
-public class ExploredSite {
+public interface IShortLine {
+    string ShortLine(Player p, int index);
+}
+
+public class ExploredSite : IShortLine {
 	public string uuid;
 	public string name;
 	public string discoveredByPlayerUUID;
@@ -36,7 +40,7 @@ public class ExploredSite {
 		return GoldilocksClass() ? "Goldilocks Class" : (StandardClass() ? "Habitable" : "Uninhabitable");
 	}
 
-    internal string ShortLine(Player p, int index = -1)
+    string IShortLine.ShortLine(Player p, int index)
     {
 		string developmentIcon = "<[grey]-[/grey]>";
 		if(population > 0){
@@ -90,6 +94,9 @@ public class ExploredSite {
     {
         return 3;
     }
+
+
+
 }
 
 public enum BuildingType{
