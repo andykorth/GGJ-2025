@@ -11,11 +11,12 @@ public class Player
 	public int tutorialStep = 0;
 
 	public List<string> exploredSiteUUIDs;
-	public List<Ship> ships;	
+	public List<Ship> ships;
     internal List<int> relicIDs;
 	public DateTime lastActivity;
 	public DateTime created;
 	public List<Message> messages;
+	public List<Building> buildings;
 
 	public string? currentResearch;
 	public float currentResearchProgress;
@@ -23,7 +24,7 @@ public class Player
 	[NonSerialized]
     internal ISingleClientProxy client;
 	[NonSerialized]
-    internal string connectionID;
+    internal string? connectionID;
 
 	[NonSerialized]
     internal Func<string, bool>? captivePrompt;
@@ -35,6 +36,7 @@ public class Player
 		// use to migrate old saves.
 		if(relicIDs == null) relicIDs = new List<int>();
 		if(messages == null) messages = new List<Message>();
+		if(buildings == null) buildings = new List<Building>();
 	}
 
 	public Player(string name){

@@ -51,8 +51,6 @@ connection.on("PlaySound", function (soundURL) {
     ScrollToBottom();
 });
 
-
-
 function ScrollToBottom(){
     const scrollBox = document.querySelector('.scroll-box');
     scrollBox.scrollTop = scrollBox.scrollHeight;
@@ -60,6 +58,30 @@ function ScrollToBottom(){
     const messageList = document.getElementById("messagesList");
     messageList.scrollTop = messageList.scrollHeight;
 }
+
+// Handle connection closed
+connection.onclose(function (error) {
+    console.error("Connection closed.");
+    if (error) {
+        console.error("Error details:", error);
+    }
+    const messageList = document.getElementById("messagesList");
+
+    const li = document.createElement("li");
+
+    const safeColor = "red"
+    const safeText = "I think you got disconnected. You probably need to refresh to reconnect."
+    const shadow = `text-shadow: 0 0 10px ${safeColor};`
+    htmlMessage = `<span style="color: ${safeColor};${shadow}">${safeText}</span>`;
+
+    // Set the HTML content of the list item
+    li.innerHTML = htmlMessage;
+
+    messageList.appendChild(li);
+
+    ScrollToBottom();
+});
+
 
 connection.start().then(function () {
     document.getElementById("sendButton").disabled = false;

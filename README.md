@@ -42,10 +42,17 @@ https://learn.microsoft.com/en-us/aspnet/core/tutorials/signalr?view=aspnetcore-
 * Retail sale of goods, slow and low price, but guarenteed sales.
 
 
+
+* Production units set a product. It makes those forever until you change it.
+* Buildings cost money to construct
+  * But use resources to upgrade.
+
 ### Cooperative elements:
 * Research Cooperative. Send a proposal to someone and they accept it. 
 * User to User trade proposals.
 * Invite a user to build on a planet you have a base on. 
+
+
 
 ###
 Materials:

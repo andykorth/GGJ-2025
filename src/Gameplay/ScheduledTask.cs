@@ -11,6 +11,7 @@ public class ScheduledTask
     public ScheduledAction task;
     public int seed;
     public string string1;
+    public BuildingType buildingType;
 
     public ScheduledTask(){
         // for json.net
@@ -60,6 +61,13 @@ public class ScheduledTask
             if (p != null && targetUUID != null)
                 s = World.instance.GetSite(this.targetUUID);
             DevelopmentMission(service, p!, s!);
+        }
+        if(task == ScheduledAction.SiteConstruction)
+        {
+            ExploredSite? s = null;
+            if (p != null && targetUUID != null)
+                s = World.instance.GetSite(this.targetUUID);
+            SiteConstruction(service, p!, s!);
         }
     }
 
@@ -154,8 +162,26 @@ public class ScheduledTask
 
         service.SendTo(p.connectionID, Ascii.Box(output));
     }
+
+    private void SiteConstruction(GameUpdateService service, Player p, ExploredSite s)
+    {
+        string projectName = this.buildingType.ToString();
+        
+        Building b = new Building();
+        b.Init(s, p, buildingType);
+        p.buildings.Add(b);
+
+        // string otherPlayers = $"{p.name} has constructed a [cyan]{projectName}[/cyan]\n";
+        // otherPlayers += $"on {s.name}. The population is now {s.population}k";
+        // service.SendExcept(p.connectionID, Ascii.Box(otherPlayers));
+
+        string output = "";
+        output += $"Your [cyan]{projectName}[/cyan] is complete on {s.name}!\n";
+
+        service.SendTo(p.connectionID, Ascii.Box(output));
+    }
 }
 
 public enum ScheduledAction{
-    ExplorationMission, SiteDevelopmentMission
+    ExplorationMission, SiteDevelopmentMission, SiteConstruction,
 }

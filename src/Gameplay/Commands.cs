@@ -10,7 +10,7 @@ public class Commands
         game.SendAll($"{p.name}: " + args);
     }
     
-    [GameCommand("Share an image with all users.")]
+    [GameCommand("Share an image with all users.", true)]
     public static void ShareImage(Player p, GameUpdateService game, string args)
     {
         if (Uri.TryCreate(args, UriKind.Absolute, out Uri? uriResult) &&
@@ -20,7 +20,7 @@ public class Commands
             game.Send(p, $"Hey {p.name}, the provided input is not a valid URL: {args}");
         }
     }
-    [GameCommand("Share an sound with all users.")]
+    [GameCommand("Share an sound with all users.", true)]
     public static void PlaySound(Player p, GameUpdateService game, string args)
     {
         if (Uri.TryCreate(args, UriKind.Absolute, out Uri? uriResult) &&
@@ -31,12 +31,16 @@ public class Commands
         }
     }
 
-    [GameCommand("See this help message.")]
+    [GameCommand("See this help message.", true)]
     public static void Help(Player p, GameUpdateService game, string args)
     {
-        string msg = "These are the commands you can type:\n";
+        bool showAll = args.Contains("all");
+
+        string msg = "These are the commands you can type: (To see them all, try [red]help all[/red])\n";
         foreach(var method in InvokeCommand.Commands.Keys){
-            msg += $"    [salmon]{method}[/salmon] - {InvokeCommand.HelpTexts[method + ""]} \n";
+            var a = InvokeCommand.HelpAttrs[method + ""];
+            if(showAll || !a.normallyHidden)
+                msg += $"    [salmon]{method}[/salmon] - {a.helpText} \n";
         }
 
         game.Send(p, msg);
@@ -109,7 +113,7 @@ public class Commands
                 output += $"     ... {count-showMax} more sites. (type [magenta]sites {count}[/magenta] to start at that item)";
                 break;
             }
-            output += site.ShortLine(count);
+            output += site.ShortLine(p, count);
             count += 1;
         }
         return output;
@@ -343,8 +347,8 @@ public class Commands
             if(message.type == global::Message.MessageType.Invitation){
                 var site = World.instance.GetSite(message.invitationSiteUUID!);
                 s += $"[cyan]The message contains an Site Invitation to join {from} on {site!.name}:[/cyan]\n \n";
-                s += site.ShortLine();
-                s += site.LongLine();
+                s += site.ShortLine(p);
+                // s += site.LongLine();
                 if(p.GetExploredSites().Contains(site)){
                     s += $"\n[red]But you are already on that planet![/red]\n";
                     game.Send(p, s);
@@ -436,7 +440,7 @@ public class Commands
         s += " [salmon]site view 0[/salmon] - View details of your first planetary site.\n";
         s += " [salmon]site invite 0[/salmon] - Invite another player to join you on your site.\n";
         s += " [salmon]site develop 0[/salmon] - Start a development project to increase the population for the entire planet\n";
-        s += " [salmon]site construct 0[/salmon] - View construction options for this site\n";
+        s += " [salmon]site construct 0[/salmon] - View building construction options\n";
 
         game.Send(p, s);
     }
@@ -448,8 +452,8 @@ public class Commands
         if(int.TryParse(indexS, out index)){
             ExploredSite site = p.GetExploredSites()[index];
 
-            game.Send(p, site.ShortLine());
-            game.Send(p, site.LongLine());
+            game.Send(p, site.ShortLine(p));
+            game.Send(p, site.LongLine(p));
 
         }else{
             game.Send(p, $"Bad index for site viewing [{indexS}]");
@@ -466,8 +470,8 @@ public class Commands
             ExploredSite site = p.GetExploredSites()[index];
 
             string s = "";
-            s+= site.ShortLine();
-            s+= site.LongLine();
+            s+= site.ShortLine(p);
+            // s+= site.LongLine();
             s+= "By inviting someone this planet, they will be able to build there too.\n It doesn't use up any of your space.\n";
 
             game.Send(p, s);
@@ -521,14 +525,6 @@ public class Commands
 
     }
 
-
-    private static void SiteConstruct(Player p, GameUpdateService game, string args)
-    {
-        
-            game.Send(p, $"ahhhhh");
-        
-    }
-
     private static void SiteDevelop(Player p, GameUpdateService game, string args)
     {
         int index;
@@ -541,8 +537,8 @@ public class Commands
             string projectName = Ascii.developmentProjects[nameIndex];
 
             string s = "";
-            s+= site.ShortLine();
-            s+= site.LongLine();
+            s+= site.ShortLine(p);
+            // s+= site.LongLine();
             s+= $"{p.name}, current cash: {p.cash}\n";
             s+= $"A development project will add 10k citizens, and cost {developmentCost}.\n";
             s+= $"Project: [cyan]{projectName}[/cyan]\n";
@@ -603,4 +599,169 @@ public class Commands
         p.Send(Ascii.Box(output));
     
     }
+
+    private static void SiteConstruct(Player p, GameUpdateService game, string args)
+    {
+        int index;
+        string indexS = PullArg(ref args);
+        if(int.TryParse(indexS, out index)){
+            ExploredSite site = p.GetExploredSites()[index];
+            int totalSlots = site.GetBuildingSlots();
+            int usedSlots = site.GetBuildings(p).Count();
+
+            string s = "";
+            s+= site.ShortLine(p);
+            s+= site.LongLine(p);
+            s+= $"Buildings: {usedSlots} / {totalSlots}\n";
+            if(usedSlots < totalSlots){
+                s+= $"\nConstruction Choices: (you have ${p.cash})\n";
+                int choiceCount = Enum.GetValues(typeof(BuildingType)).Length;
+                for(int i=0; i < choiceCount; i++){
+                    s += GetConstructionLine(i, site, (BuildingType) i);
+                    s += "\n";
+                }
+                game.Send(p, s);
+                game.SetCaptivePrompt(p, "Which do you want to build [red]0-{choiceCount}[/red] (or [red]cancel[/red])",
+                    (string response) => {
+                        string r = response.ToLower();
+                        int index = -1;
+                        if(r == "cancel" || int.TryParse(r, out index) ){
+                            if(index >= 0){
+                                DoConstruct(p, game, site, (BuildingType) index);
+                            }
+                            if(r == "cancel")
+                                game.Send(p, "Construction canceled.");
+                            return true;
+                        }else{
+                            return false;
+                        }
+                    });
+            }else{
+                s+= "[red]Site Full[/red]\n";
+                game.Send(p, s);
+            }
+        }else{
+            game.Send(p, $"Bad index for site construction [{indexS}]");
+        }   
+    }
+
+    private static string GetConstructionLine(int index, ExploredSite site, BuildingType type)
+    {
+        int cost = GetCost(site, type);
+
+        return $"   {index}) New {type} - ${cost}, {GetTypeDesc(type)}";
+    }
+
+    private static string GetTypeDesc(BuildingType type)
+    {
+        return type switch
+        {
+            BuildingType.Retail => "Generates revenue by selling goods.",
+            BuildingType.Mine => "Extracts raw materials from the earth.",
+            BuildingType.Factory => "Produces finished goods from raw materials.",
+            _ => "Unknown building type."
+        };
+    }
+
+    private static int GetCost(ExploredSite site, BuildingType type)
+    {
+        int cost = 100;
+        if (type == BuildingType.Retail)
+        {
+            cost = (int)site.DevelopmentPriceFactor() * 50 + 100;
+        }
+        if (type == BuildingType.Mine)
+        {
+            cost = (int)(site.planetClass + 0.4) * 150 + 50;
+        }
+        if (type == BuildingType.Factory)
+        {
+            cost = (int)site.DevelopmentPriceFactor() * 200 + 50;
+        }
+
+        return cost;
+    }
+
+
+    private static void DoConstruct(Player p, GameUpdateService game, ExploredSite site, BuildingType type)
+    {
+        int cost = GetCost(site, type);
+        if(p.cash < cost){
+            game.Send(p, "You don't have enough cash!");
+            return;
+        }
+        p.cash -= cost;
+
+        int duration = cost / 4 / World.instance.timescale;
+
+        string output = "";
+        if (site.population <= 0)
+        {
+            switch (type)
+            {
+                case BuildingType.Retail:
+                    output += site.GoldilocksClass()
+                        ? $"An ambitious venture begins on {site.name}, as the first shops open their doors amidst lush surroundings.\n"
+                        : site.StandardClass()
+                            ? $"The first trade post on {site.name} is established, braving the chill winds.\n"
+                            : $"A lone outpost on the barren surface of {site.name} sparks the beginnings of commerce.\n";
+                    break;
+
+                case BuildingType.Mine:
+                    output += site.GoldilocksClass()
+                        ? $"Drilling begins on {site.name}, uncovering treasures hidden beneath the verdant ground.\n"
+                        : site.StandardClass()
+                            ? $"Mining rigs pierce the frostbitten crust of {site.name}, eager for precious ores.\n"
+                            : $"On the harsh, airless surface of {site.name}, machines dig tirelessly for valuable resources.\n";
+                    break;
+
+                case BuildingType.Factory:
+                    output += site.GoldilocksClass()
+                        ? $"The hum of machinery fills the air on {site.name} as the first factory begins production.\n"
+                        : site.StandardClass()
+                            ? $"Industrial production sparks life into the cold plains of {site.name}.\n"
+                            : $"Sealed within domes, the factory on {site.name} churns in defiance of the lifeless expanse outside.\n";
+                    break;
+            }
+        }
+        else
+        {
+            switch (type)
+            {
+                case BuildingType.Retail:
+                    output += site.GoldilocksClass()
+                        ? $"Shoppers flood the bustling markets of {site.name}, eager for new wares.\n"
+                        : site.StandardClass()
+                            ? $"The citizens of {site.name} enjoy a newfound outlet for trade and commerce.\n"
+                            : $"Inside their protective domes, the people of {site.name} experience the joy of trade for the first time.\n";
+                    break;
+
+                case BuildingType.Mine:
+                    output += site.GoldilocksClass()
+                        ? $"Excavators unearth riches on {site.name}, greeted by cheering onlookers.\n"
+                        : site.StandardClass()
+                            ? $"The citizens of {site.name} watch with awe as the mines yield their first haul.\n"
+                            : $"Within their protective shelters, the people of {site.name} hear the rumble of drills tapping into fortune.\n";
+                    break;
+
+                case BuildingType.Factory:
+                    output += site.GoldilocksClass()
+                        ? $"The first assembly lines on {site.name} bring excitement and promise to the population.\n"
+                        : site.StandardClass()
+                            ? $"In the cool twilight, the people of {site.name} celebrate the hum of progress.\n"
+                            : $"Within the safety of domes, the factory on {site.name} signals a step toward self-reliance.\n";
+                    break;
+            }
+        }
+
+        output += $"Thanks to {p.name}'s vision, {type} construction has begun on {site.name}.\n";
+        output += $"The project is expected to complete in {duration} s, shaping the planet's future.\n";
+
+        p.Send(Ascii.Box(output));
+
+        ScheduledTask st = new ScheduledTask(duration, p, site, ScheduledAction.SiteConstruction);
+        st.buildingType = type;
+        World.instance.Schedule(st);
+    }
+
 }

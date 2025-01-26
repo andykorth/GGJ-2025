@@ -8,17 +8,19 @@ using Microsoft.AspNetCore.Identity.Data;
 public class GameCommandAttribute : Attribute
 {
     public string helpText;
+    public bool normallyHidden;
 
-    public GameCommandAttribute(string v)
+    public GameCommandAttribute(string v, bool normallyHidden = false)
     {
         this.helpText = v;
+        this.normallyHidden = normallyHidden;
     }
 }
 
 public class InvokeCommand
 {
     internal static readonly Dictionary<string, MethodInfo> Commands = new();
-    internal static readonly Dictionary<string, string> HelpTexts = new();
+    internal static readonly Dictionary<string, GameCommandAttribute> HelpAttrs = new();
 
     // Static constructor to populate the Commands dictionary
     static InvokeCommand()
@@ -31,7 +33,7 @@ public class InvokeCommand
             var attribute = method.GetCustomAttribute<GameCommandAttribute>();
             var commandName = method.Name.ToLower();
             Commands[commandName] = method;
-            HelpTexts[commandName] = attribute?.helpText ?? "No description available.";
+            HelpAttrs[commandName] = attribute!;
         }
 
         Log.Info("Found commands: " + Commands.Count);

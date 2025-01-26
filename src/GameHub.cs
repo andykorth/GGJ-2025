@@ -100,6 +100,13 @@ Try '[red]help[/red]' to get started.
     {
         ConnectedClients.TryRemove(Context.ConnectionId, out _);
         Log.Info($"Client disconnected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");
+        // find the player and mark them disconnected???
+        foreach(var p in World.instance.allPlayers){
+            if(p.connectionID == Context.ConnectionId){
+                p.connectionID = null;
+            }
+        }
+        
         return base.OnDisconnectedAsync(exception);
     }
 

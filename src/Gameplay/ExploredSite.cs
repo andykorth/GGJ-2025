@@ -1,4 +1,5 @@
 
+
 public class ExploredSite {
 	public string uuid;
 	public string name;
@@ -35,7 +36,7 @@ public class ExploredSite {
 		return GoldilocksClass() ? "Goldilocks Class" : (StandardClass() ? "Habitable" : "Uninhabitable");
 	}
 
-    internal string ShortLine(int index = -1)
+    internal string ShortLine(Player p, int index = -1)
     {
 		string developmentIcon = "<[grey]-[/grey]>";
 		if(population > 0){
@@ -57,11 +58,12 @@ public class ExploredSite {
 			developmentIcon = "<[RebeccaPurple]&[/RebeccaPurple]>";
 		}
 		string classMessage = ClassString();
+		int buildingCount = this.GetBuildings(p).Count();
 		string showIndex = index < 0 ? "" : index + ")";
-		return $"   {showIndex} {developmentIcon} {name} - {classMessage}\n";
+		return $"   {showIndex} {developmentIcon} {name,-15} - {classMessage,-18} {buildingCount} buildings. \n";
     }
 
-    internal string LongLine()
+    internal string LongLine(Player player)
     {
 		int playerCount = 0;
 		foreach(Player p in World.instance.allPlayers){
@@ -69,6 +71,91 @@ public class ExploredSite {
 				playerCount += 1;
 			}
 		}
-		return $"   Population: {population}k\n   Players: {playerCount}\n   Discovered by {World.instance.GetPlayer(discoveredByPlayerUUID)!.name} on {discoveredDate.ToString()}\n";
+		string s = $"   Population: {population}k\n   Players: {playerCount}\n   Discovered by {World.instance.GetPlayer(discoveredByPlayerUUID)!.name} on {discoveredDate.ToString()}\n";
+		int count = 0;
+		foreach(Building b in GetBuildings(player)){
+			s += b.ShortLine(count);
+			count += 1;
+		}
+
+		return s;
     }
+
+    public IEnumerable<Building> GetBuildings(Player p)
+    {
+		return p.buildings.Where((b) => b.siteUUID == this.uuid);
+    }
+
+    internal int GetBuildingSlots()
+    {
+        return 3;
+    }
+}
+
+public enum BuildingType{
+	Retail, Mine, Factory
+}
+
+public class Building {
+
+	public string uuid;
+	public string ownerPlayerUUID;
+	public string siteUUID;
+	public DateTime buildDate;
+	public BuildingType buildingType;
+	public int level;
+	public string name;
+
+	public string GetName(){
+		return name ?? buildingType.ToString();
+	}
+
+
+    internal void Init(ExploredSite site, Player owner, BuildingType buildingType)
+    {
+        this.uuid = System.Guid.NewGuid().ToString();
+		this.ownerPlayerUUID = owner.uuid;
+		this.siteUUID = site.uuid;
+		this.buildDate = DateTime.Now;
+		this.buildingType = buildingType;
+		this.level = 0;
+    }
+
+    internal string ShortLine(int index = -1)
+    {
+		string developmentIcon = "<[grey]-[/grey]>";
+
+		switch (level)
+		{
+			case 1:
+				developmentIcon = "<[white]=[/white]>";
+				break;
+			case 2:
+				developmentIcon = "<[cyan]*[/cyan]>";
+				break;
+			case 3:
+				developmentIcon = "<[orchid]x[/orchid]>";
+				break;
+			case 4:
+				developmentIcon = "<[yellow]#[/yellow]>";
+				break;
+			case 5:
+				developmentIcon = "<[chartreuse]@[/chartreuse]>";
+				break;
+			case 6:
+				developmentIcon = "<[RebeccaPurple]&[/RebeccaPurple]>";
+				break;
+			default:
+				break;
+		}
+		string productionMessage = " - asdf";
+		string showIndex = index < 0 ? "" : index + ")";
+		return $"   {showIndex} {developmentIcon} {GetName()} {productionMessage}\n";
+    }
+
+    internal string LongLine()
+    {
+		return "";
+    }
+
 }

@@ -22,8 +22,12 @@ public class GameUpdateService : BackgroundService
     }
 
     public void Send(Player p, string line){
+        if(p.connectionID == null){
+            // they aren't logged in anymore! Thanks Joanna for finding this bug :P
+            return;
+        }
         var v = _hubContext.Clients.Client(p.connectionID);
-        if(v != null) // they  might be offline?
+        if(v != null) // I don't think this can happen
             v.SendAsync("ReceiveLine", line);
     }
 
