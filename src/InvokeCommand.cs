@@ -49,11 +49,11 @@ public class InvokeCommand
             }
             catch (Exception ex) {
                 if(ex.InnerException != null){
-                    game.Send(p, $"Error executing command [{command}]: {ex.InnerException!.Message}");
+                    game.Send(p, $"Error executing command [{command}]: [red]{ex.InnerException!.Message}[/red]");
                     game.Send(p, ex!.InnerException!.StackTrace!);
                     Log.Error(ex.InnerException.ToString());
                 }else{
-                    game.Send(p, $"Error executing command [{command}]: {ex.Message}");
+                    game.Send(p, $"Error executing command [{command}]: [red]{ex.Message}[/red]");
                     game.Send(p, ex.StackTrace!);
                     Log.Error(ex.ToString());
                 }

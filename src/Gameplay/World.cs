@@ -69,6 +69,9 @@ public class World
 		Log.Info("Create or load world...");
 		if(File.Exists(FILENAME)){
 			instance = JSONUtilities.Deserialize<World>(FILENAME);
+			foreach(var item in instance.allPlayers){
+				item.Migrate();
+			}
 		}else{
 			Log.Info("No world found, writing one.");
 			instance = new World();

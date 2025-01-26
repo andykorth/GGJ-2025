@@ -262,7 +262,7 @@ public class Commands
 
             if(s.shipMission == global::Ship.ShipMission.Idle){
 
-                int ticks = 600 / World.instance.timescale;
+                int ticks = 200 / World.instance.timescale;
                 output += $" Exploration mission will take {ticks} seconds.";
 
                 game.Send(p, output);
@@ -621,7 +621,7 @@ public class Commands
                     s += "\n";
                 }
                 game.Send(p, s);
-                game.SetCaptivePrompt(p, "Which do you want to build [red]0-{choiceCount}[/red] (or [red]cancel[/red])",
+                game.SetCaptivePrompt(p, $"Which do you want to build: [red]0-{choiceCount}[/red] (or [red]cancel[/red])",
                     (string response) => {
                         string r = response.ToLower();
                         int index = -1;
