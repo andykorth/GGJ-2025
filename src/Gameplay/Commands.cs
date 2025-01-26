@@ -69,34 +69,21 @@ public class Commands
         p.tutorialStep = Math.Min(1, p.tutorialStep);
         string output = "";
 
-        output += $"=========== Empire Status ===========\n";
+        output += Ascii.Header("Empire Status", 40, "yellow");
         
         output += $"   User: {p.name.PadRight(15)} | Cash: { (p.cash+"").PadRight(10) }\n";
         output += $"   Completed Research: {0}  | Unread Messages: {p.UnreadMessages()} \n";
         output += ShowShips(4, p, 0);
 
         output += ShowSites(4, p, 0);
-        output += $"===== Unresearched Relics [{p.relicIDs.Count}] =====\n";
+        output += ShowRelics(4, p, 0);
         game.Send(p, output);
     }
 
     private static string ShowShips(int showMax, Player p, int start)
     {
-        string output = $"===== Ships [{p.ships.Count}] =====\n";
-        int count = 0;
-        foreach (var ship in p.ships){
-            if(count < start) {
-                count += 1;
-                continue;
-            }
-            if(count > showMax){
-                output += $"     ... {count-showMax} more ships. (type [magenta]ships {count}[/magenta] to start at that item)";
-                break;
-            }
-            output += ship.ShortLine(count);
-            count += 1;
-        }
-        return output;
+        var list = p.ships;
+        return ShowList(list.Cast<IShortLine>().ToList(), "Ships", "ship", showMax, p, start);
     }
 
     private static string ShowList(List<IShortLine> list, string title, string command, int showMax, Player p, int start, int headerWidth = 40)
@@ -110,7 +97,7 @@ public class Commands
                 continue;
             }
             if(count > showMax){
-                output += $"     ... {count-showMax} more entries. (type [magenta]{command} {count}[/magenta] to start at that item)";
+                output += $"     ... {count-showMax} more entries. (type [magenta]{command} {count}[/magenta] to start at that item)\n";
                 break;
             }
             output += item.ShortLine(p, count);
@@ -123,6 +110,12 @@ public class Commands
     {
         var list = p.GetExploredSites();
         return ShowList(list.Cast<IShortLine>().ToList(), "Discovered Sites", "site", showMax, p, start);
+    }
+
+    private static string ShowRelics(int showMax, Player p, int start)
+    {
+        var list = p.GetRelics();
+        return ShowList(list.Cast<IShortLine>().ToList(), "Unresearched Relics", "---", showMax, p, start);
     }
 
     private static bool CheckArg(string check, ref string args){
@@ -166,7 +159,7 @@ public class Commands
         int start = 0;
         int.TryParse(args, out start);
         string s= ShowShips(20, p, start);
-        s += $"===== Ship Commands =====\n";
+        s += Ascii.Header("Ship Commands", 40);
         s += " [salmon]ship view 0[/salmon] - View details of your first ship.\n";
         s += " [salmon]ship explore 0[/salmon] - Send your first ship to explore.\n";
         s += " [salmon]ship rename 0 Big Bertha[/salmon] - Rename your first ship to 'Big Bertha'\n";
@@ -182,27 +175,8 @@ public class Commands
         int start = 0;
         int.TryParse(args, out start);
 
-        var now = DateTime.Now;
-        string s = $"===== Players ({sortedPlayers.Count()}) =====\n";
-
-        // Display each player's name and how recently they were active
-        int count = 0;
-        int showMax = 20;
-        foreach (var player in sortedPlayers)
-        {
-            if(count < start) {
-                count += 1;
-                continue;
-            }
-            if(count > showMax){
-                s += $"     ... {count-showMax} more players. (type [magenta]who {count}[/magenta] to start at that item)";
-                break;
-            }
-
-            TimeSpan duration = now - player.lastActivity;
-            s += ($"{player.name} - {Ascii.TimeAgo(duration)}\n");
-            count += 1;
-        }
+        var list = p.ships;
+        string s = ShowList(sortedPlayers.Cast<IShortLine>().ToList(), "Players", "ship", 20, p, start);
 
         game.Send(p, s);
     }
@@ -227,29 +201,11 @@ public class Commands
 
         int.TryParse(args, out int start);
 
-        string s = $"===== Messages ({sortedMessages.Count()}) =====\n";
+        var list = sortedMessages;
+        string s = ShowList(list.Cast<IShortLine>().ToList(), "Messages", "message", 20, p, start);
 
-        // Display each player's name and how recently they were active
-        int count = 0;
-        int showMax = 20;
-        DateTime now = DateTime.Now;
-        foreach (var message in sortedMessages)
-        {
-            if(count < start) {
-                count += 1;
-                continue;
-            }
-            if(count > showMax){
-                s += $"     ... {count-showMax} more messages. (type [magenta]message {count}[/magenta] to start at that item)";
-                break;
-            }
-            // Determine if the message is read or unread
-            string status = message.read.HasValue ? "<read>" : "[cyan]<unread>[/cyan]";
-            string from = World.instance.GetPlayer(message.fromPlayerUUID)!.name;
-            // Display the message details
-            s += $"[{Ascii.TimeAgo(now - message.sent)}] {status} - {message.type} from {from}: {Ascii.Shorten(message.contents, 20)}";
-        }
-                s += $"===== Message Commands =====\n";
+
+        s += Ascii.Header("Message Commands", 40);
         s += " [salmon]message view 0[/salmon] - View message or respond to invitation.\n";
         s += " [salmon]message send[/salmon] - Start sending a text message to another player.\n";
 
@@ -263,7 +219,7 @@ public class Commands
         if(int.TryParse(args, out index)){
             string output = "Begin exploration mission with:\n";
             Ship s = p.ships[index];
-            output += s.ShortLine(0);
+            output += s.ShortLine(p, -1);
             output += s.LongLine();
 
             if(s.shipMission == global::Ship.ShipMission.Idle){
@@ -300,7 +256,7 @@ public class Commands
         output += $"Hopefully their efforts will be fruitful.\n";
         output += $"We expect to hear from them in {duration}s.\n";
 
-        p.Send(Ascii.Box(output));
+        p.Send(Ascii.Box(output, "blue"));
     
 
     }
@@ -325,7 +281,7 @@ public class Commands
         if(int.TryParse(indexS, out index)){
             Ship ship = p.ships[index];
 
-            game.Send(p, ship.ShortLine());
+            game.Send(p, ship.ShortLine(p, -1));
             game.Send(p, ship.LongLine());
         }else{
             game.Send(p, $"Bad index for ship viewing [{indexS}]");
@@ -442,7 +398,8 @@ public class Commands
         int start = 0;
         int.TryParse(args, out start);
         string s= ShowSites(20, p, start);
-        s += $"===== Site Commands =====\n";
+
+        s += Ascii.Header($"Site Commands", 40);
         s += " [salmon]site view 0[/salmon] - View details of your first planetary site.\n";
         s += " [salmon]site invite 0[/salmon] - Invite another player to join you on your site.\n";
         s += " [salmon]site develop 0[/salmon] - Start a development project to increase the population for the entire planet\n";
@@ -458,6 +415,7 @@ public class Commands
         if(int.TryParse(indexS, out index)){
             ExploredSite site = p.GetExploredSites()[index];
 
+            game.Send(p, Ascii.Header(site.name, 40, site.SiteColor()));
             game.Send(p, ((IShortLine)site).ShortLine(p, -1));
             game.Send(p, site.LongLine(p));
 
@@ -465,8 +423,7 @@ public class Commands
             game.Send(p, $"Bad index for site viewing [{indexS}]");
         }
     }
-
-    
+  
     
     private static void SiteInvite(Player p, GameUpdateService game, string args)
     {
@@ -507,7 +464,7 @@ public class Commands
                 });
 
         }else{
-            game.Send(p, $"Bad index for site viewing [{indexS}]");
+            game.Send(p, $"Bad index for site invite [{indexS}]");
         }
     }
 
@@ -564,7 +521,7 @@ public class Commands
             }
 
         }else{
-            game.Send(p, $"Bad index for site viewing [{indexS}]");
+            game.Send(p, $"Bad index for site develop [{indexS}]");
         }
     }
 
@@ -674,15 +631,15 @@ public class Commands
         int cost = 100;
         if (type == BuildingType.Retail)
         {
-            cost = (int)site.DevelopmentPriceFactor() * 50 + 100;
+            cost = (int)(site.DevelopmentPriceFactor() * 50 + 100);
         }
         if (type == BuildingType.Mine)
         {
-            cost = (int)(site.planetClass + 0.4) * 150 + 50;
+            cost = (int)((site.planetClass + 0.4) * 150 + 50);
         }
         if (type == BuildingType.Factory)
         {
-            cost = (int)site.DevelopmentPriceFactor() * 200 + 50;
+            cost = (int)(site.DevelopmentPriceFactor() * 200 + 50);
         }
 
         return cost;
@@ -769,5 +726,36 @@ public class Commands
         st.buildingType = type;
         World.instance.Schedule(st);
     }
+
+
+    [GameCommand("Enter the production menu.")]
+    public static void Prod(Player p, GameUpdateService game, string args)
+    {
+        // if(CheckArg("view", ref args)){
+        //     SiteView(p, game, args);
+        //     return;
+        // }
+        
+
+        int start = 0;
+        int.TryParse(args, out start);
+        string s= ShowProdBuildings(20, p, start);
+
+        s += Ascii.Header($"Site Commands", 40);
+        s += " [salmon]site view 0[/salmon] - View details of your first planetary site.\n";
+        s += " [salmon]site invite 0[/salmon] - Invite another player to join you on your site.\n";
+        s += " [salmon]site develop 0[/salmon] - Start a development project to increase the population for the entire planet\n";
+        s += " [salmon]site construct 0[/salmon] - View building construction options\n";
+
+        game.Send(p, s);
+    }
+
+    private static string ShowProdBuildings(int showMax, Player p, int start)
+    {
+        
+        var list = p.buildings;
+        return ShowList(list.Cast<IShortLine>().ToList(), "Production Buildings", "prod", showMax, p, start);
+    }
+
 
 }

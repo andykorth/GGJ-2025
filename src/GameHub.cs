@@ -86,7 +86,7 @@ players to expand your empire, buy and sell your production, explore with spaces
 conduct research!
 
 To begin, [cyan]enter your username above[/cyan], then send your first command below.
-Try '[red]help[/red]' to get started.
+Try '[salmon]help[/salmon]' to get started.
                                                                                                                                                        
 ");
 

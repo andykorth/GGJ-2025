@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
-public class Player
+public class Player : IShortLine
 {
 	public string name;
 	public string uuid;
@@ -60,11 +60,11 @@ public class Player
 
 		// start with two ships!
 		Ship s = new Ship();
-		s.Init(World.instance.GetShipDesign("Pioneer"));
+		s.Init(World.instance.GetShipDesign("Pioneer I"));
 		ships.Add(s);
 
 		s = new Ship();
-		s.Init(World.instance.GetShipDesign("Pioneer"));
+		s.Init(World.instance.GetShipDesign("Pioneer II"));
 		ships.Add(s);
 
 		currentResearch = null;
@@ -82,6 +82,18 @@ public class Player
 		return exploredSites;
 	}
 
+	public List<Relic> GetRelics()
+	{
+		List<Relic> list = new List<Relic>();
+		foreach (var relicIndex in this.relicIDs)
+		{
+			list.Add(new Relic(){id = relicIndex});
+		}
+		return list;
+	}
+
+
+
 	internal void Send(string output)
 	{
 		client.SendAsync("ReceiveLine", output);
@@ -94,10 +106,29 @@ public class Player
 		return unreadCount;
 	}
 
-
+    public string ShortLine(Player p, int index)
+    {
+		TimeSpan duration = DateTime.Now - this.lastActivity;
+		return $"{this.name} - {Ascii.TimeAgo(duration)}\n";
+    }
 }
 
-public class Ship
+public class Relic : IShortLine
+{
+	public int id;
+
+	public string ShortLine(Player p, int index = -1)
+	{
+		string showIndex = index < 0 ? "" : index + ")";
+		return $"   {showIndex} [cyan]{GetName()}[/cyan]\n";
+	}
+
+	public string GetName(){
+		return Ascii.relicNames[id];
+	}
+}
+
+public class Ship : IShortLine
 {
 	public string? name;
 	public string uuid;
@@ -109,7 +140,7 @@ public class Ship
 	public long arrivalTime = 0;
 
 
-	internal string ShortLine(int index = -1)
+	public string ShortLine(Player p, int index = -1)
 	{
 		string showIndex = index < 0 ? "" : index + ")";
 		string mission = shipMission.ToString();
@@ -172,7 +203,7 @@ public class ShipDesign
 	}
 }
 
-public class Message
+public class Message : IShortLine
 {
 	public DateTime sent;
 	public DateTime? read;
@@ -199,4 +230,15 @@ public class Message
 		this.fromPlayerUUID = fromPlayer.uuid;
 		this.read = null;
 	}
+
+    public string ShortLine(Player p, int index)
+    {
+		DateTime now = DateTime.Now;
+		// Determine if the message is read or unread
+		string status = this.read.HasValue ? "<read>" : "[cyan]<unread>[/cyan]";
+		string from = World.instance.GetPlayer(this.fromPlayerUUID)!.name;
+		// Display the message details
+		return $"[{Ascii.TimeAgo(now - this.sent)}] {status} - {this.type} from {from}: {Ascii.Shorten(this.contents, 20)}";
+
+    }
 }

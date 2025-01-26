@@ -3,16 +3,28 @@ using System.Text.RegularExpressions;
 
 public static class Ascii{
 
-    public static string Header(string title, int headerWidth)
+    public static string Header(string title, int headerWidth, string? color = null)
     {
         int padding = headerWidth - title.Length;
         int paddingLeft = padding / 2 - 1;
         int paddingRight = padding - paddingLeft - 1;
 
-        return $"{new string('=', paddingLeft)} {title} {new string('=', paddingRight)}\n";
+        string left = WrapColor(new string('=', paddingLeft), color);
+        string right = WrapColor(new string('=', paddingRight), color);
+
+        return $"{left} {title} {right}\n";
     }
 
-    public static string Box(string text)
+    public static string WrapColor(string v, string? color)
+    {
+        if(string.IsNullOrEmpty(color)){
+            return v;
+        }else{
+            return $"[{color}]{v}[/{color}]";
+        }
+    }
+
+    public static string Box(string text, string? color = null)
     {        
         // Split the input into lines
         var lines = text.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
@@ -23,6 +35,9 @@ public static class Ascii{
         // Create the box components
         string horizontalBorder = "+" + new string('-', maxLength + 2) + "+";
 
+        horizontalBorder = WrapColor(horizontalBorder, color);
+        string vert = WrapColor("|", color);
+        
         // Build the box
         var box = new StringBuilder();
         box.AppendLine(horizontalBorder);
@@ -35,7 +50,8 @@ public static class Ascii{
             int paddingLeft = padding / 2;
             int paddingRight = padding - paddingLeft;
 
-            box.AppendLine($"| {new string(' ', paddingLeft)}{line}{new string(' ', paddingRight)} |");
+
+            box.AppendLine($"{vert} {new string(' ', paddingLeft)}{line}{new string(' ', paddingRight)} {vert}");
         }
         box.AppendLine(horizontalBorder);
 
@@ -63,6 +79,23 @@ public static class Ascii{
             return input; // Return the full string if it's within the limit
         }
         return input.Substring(0, maxLength) + "...";
+    }
+
+    public static string ToRomanNumeral(int number)
+    {
+        if (number < 0 || number > 20)
+        {
+            return "?";
+        }
+
+        // Roman numeral mappings for 1 to 20
+        string[] romanNumerals = 
+        {
+            "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+            "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"
+        };
+
+        return romanNumerals[number];
     }
 
 

@@ -40,6 +40,31 @@ public class ExploredSite : IShortLine {
 		return GoldilocksClass() ? "Goldilocks Class" : (StandardClass() ? "Habitable" : "Uninhabitable");
 	}
 
+	public string SiteColor(){
+		if(population <= 0){
+			return "grey";
+		}
+		if(population > 0){
+			return "white";
+		}
+		if(population > 12){
+			return "cyan";
+		}
+		if(population > 30){
+			return "orchid";
+		}
+		if(population > 60){
+			return "yellow";
+		}
+		if(population > 100){
+			return "chartreuse";
+		}
+		if(population > 150){
+			return "RebeccaPurple";
+		}
+		return "red";
+	}
+
     string IShortLine.ShortLine(Player p, int index)
     {
 		string developmentIcon = "<[grey]-[/grey]>";
@@ -78,7 +103,7 @@ public class ExploredSite : IShortLine {
 		string s = $"   Population: {population}k\n   Players: {playerCount}\n   Discovered by {World.instance.GetPlayer(discoveredByPlayerUUID)!.name} on {discoveredDate.ToString()}\n";
 		int count = 0;
 		foreach(Building b in GetBuildings(player)){
-			s += b.ShortLine(count);
+			s += b.ShortLine(player, count);
 			count += 1;
 		}
 
@@ -103,7 +128,7 @@ public enum BuildingType{
 	Retail, Mine, Factory
 }
 
-public class Building {
+public class Building : IShortLine {
 
 	public string uuid;
 	public string ownerPlayerUUID;
@@ -128,7 +153,7 @@ public class Building {
 		this.level = 0;
     }
 
-    internal string ShortLine(int index = -1)
+    public string ShortLine(Player p, int index)
     {
 		string developmentIcon = "<[grey]-[/grey]>";
 
@@ -155,9 +180,10 @@ public class Building {
 			default:
 				break;
 		}
+		var site = World.instance.GetSite(this.siteUUID);
 		string productionMessage = " - asdf";
 		string showIndex = index < 0 ? "" : index + ")";
-		return $"   {showIndex} {developmentIcon} {GetName()} {productionMessage}\n";
+		return $"   {showIndex} {developmentIcon} {GetName(),-20} {Ascii.WrapColor(site!.name, site!.SiteColor()), -20} {productionMessage}\n";
     }
 
     internal string LongLine()

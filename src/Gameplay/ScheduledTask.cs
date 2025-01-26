@@ -95,6 +95,11 @@ public class ScheduledTask
 
         ExploredSite newSite = new ExploredSite();
         string name = Ascii.planetNames[index];
+        int matchingNames = World.instance.allSites.FindAll(s => s.name.StartsWith(name)).Count();
+        if(matchingNames > 0){
+            name = $"{name} {Ascii.ToRomanNumeral(matchingNames)}";
+        }
+
         newSite.Init(name, p.uuid, planetClass);
 
         otherPlayers += $"{name}: {newSite.ClassString()}\n";
@@ -142,7 +147,7 @@ public class ScheduledTask
         // TODO check if ship is wrecked.
 
         service.SendExcept(p.connectionID, Ascii.Box(otherPlayers));
-        service.SendTo(p.connectionID, Ascii.Box(output));
+        service.Send(p, Ascii.Box(output, "blue"));
     }
 
     private void DevelopmentMission(GameUpdateService service, Player p, ExploredSite s)
@@ -160,7 +165,7 @@ public class ScheduledTask
         output += $"New pioneers stream to the planet, and the population is now {s.population}.\n";
         output += $"These new people will soon be looking for more retail shopping options.\n";
 
-        service.SendTo(p.connectionID, Ascii.Box(output));
+        service.Send(p, Ascii.Box(output, "yellow"));
     }
 
     private void SiteConstruction(GameUpdateService service, Player p, ExploredSite s)
@@ -178,7 +183,7 @@ public class ScheduledTask
         string output = "";
         output += $"Your [cyan]{projectName}[/cyan] is complete on {s.name}!\n";
 
-        service.SendTo(p.connectionID, Ascii.Box(output));
+        service.Send(p, Ascii.Box(output, "yellow"));
     }
 }
 
