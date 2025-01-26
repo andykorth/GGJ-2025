@@ -90,6 +90,7 @@ public class ExploredSite {
 	public DateTime discoveredDate;
 	public float planetClass;
 	public int population = 0;
+	public int pendingPopulation = 0;
 
 	public float DevelopmentPriceFactor(){
 		return (1f - planetClass) * 0.4f + 0.8f;
@@ -122,7 +123,7 @@ public class ExploredSite {
     {
 		string developmentIcon = "<[grey]-[/grey]>";
 		if(population > 0){
-			developmentIcon = "<[white]-[/white]>";
+			developmentIcon = "<[white]=[/white]>";
 		}
 		if(population > 12){
 			developmentIcon = "<[cyan]*[/cyan]>";

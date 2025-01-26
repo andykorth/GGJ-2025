@@ -535,7 +535,7 @@ public class Commands
         string indexS = PullArg(ref args);
         if(int.TryParse(indexS, out index)){
             ExploredSite site = p.GetExploredSites()[index];
-            int population = site.population;
+            int population = site.pendingPopulation;
             int developmentCost = (int) ((500 + population * 30) * site.DevelopmentPriceFactor());
             int nameIndex = (new Random(index + population)).Next(0, Ascii.developmentProjects.Length);
             string projectName = Ascii.developmentProjects[nameIndex];
@@ -572,6 +572,7 @@ public class Commands
         int duration = developmentCost / 4 / World.instance.timescale;
 
         ScheduledTask st = new ScheduledTask(duration, p, site, ScheduledAction.SiteDevelopmentMission);
+        st.string1 = projectName;
         World.instance.Schedule(st);
 
         string output = "";
@@ -596,6 +597,8 @@ public class Commands
         output += $"Good things are coming to the planet thanks to {p.name}.\n";
         output += $"Development has begun on [cyan]{projectName}[/cyan].\n";
         output += $"The population will grow when the project is complete in {duration} s.\n";
+        
+        site.pendingPopulation += 10;
 
         p.Send(Ascii.Box(output));
     

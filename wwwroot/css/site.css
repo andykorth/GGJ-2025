@@ -8,6 +8,11 @@ html {
   }
 }
 
+body {
+  background-color: #121212; /* Dark background for the entire page */
+  color: #e0e0e0; /* Light text for default readability */
+}
+
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
@@ -15,10 +20,6 @@ html {
 html {
   position: relative;
   min-height: 100%;
-}
-
-body {
-  margin-bottom: 60px;
 }
 
 /* General terminal styling */
@@ -36,6 +37,7 @@ body {
   white-space: pre-wrap; /* Preserve formatting for multiline content */
   border: 2px solid #555; /* Optional: border for visual separation */
   box-sizing: border-box; /* Include padding in height/width calculations */
+  line-height: normal;
 }
 
 /* Optional: Add styles for individual messages */

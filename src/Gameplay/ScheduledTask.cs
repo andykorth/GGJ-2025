@@ -10,6 +10,7 @@ public class ScheduledTask
     public string targetUUID;
     public ScheduledAction task;
     public int seed;
+    public string string1;
 
     public ScheduledTask(){
         // for json.net
@@ -55,7 +56,10 @@ public class ScheduledTask
         }
         if(task == ScheduledAction.SiteDevelopmentMission)
         {
-
+            ExploredSite? s = null;
+            if (p != null && targetUUID != null)
+                s = World.instance.GetSite(this.targetUUID);
+            DevelopmentMission(service, p!, s!);
         }
     }
 
@@ -130,6 +134,24 @@ public class ScheduledTask
         // TODO check if ship is wrecked.
 
         service.SendExcept(p.connectionID, Ascii.Box(otherPlayers));
+        service.SendTo(p.connectionID, Ascii.Box(output));
+    }
+
+    private void DevelopmentMission(GameUpdateService service, Player p, ExploredSite s)
+    {
+        string projectName = this.string1;
+        
+        s.population += 10;
+        
+        string otherPlayers = $"{p.name} has constructed a [cyan]{projectName}[/cyan]\n";
+        otherPlayers += $"on {s.name}. The population is now {s.population}k";
+        service.SendExcept(p.connectionID, Ascii.Box(otherPlayers));
+
+        string output = $"It is a glorious day on {s.name}!\n";
+        output += $"The [cyan]{projectName}[/cyan] you funded is finally complete.\n";
+        output += $"New pioneers stream to the planet, and the population is now {s.population}.\n";
+        output += $"These new people will soon be looking for more retail shopping options.\n";
+
         service.SendTo(p.connectionID, Ascii.Box(output));
     }
 }

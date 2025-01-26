@@ -1,10 +1,11 @@
 using System.Text;
+using System.Text.RegularExpressions;
 
 public static class Ascii{
 
 
     public static string Box(string text)
-    {
+    {        
         // Split the input into lines
         var lines = text.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -13,15 +14,16 @@ public static class Ascii{
 
         // Create the box components
         string horizontalBorder = "+" + new string('-', maxLength + 2) + "+";
-        string emptyLine = "|" + new string(' ', maxLength + 2) + "|";
 
         // Build the box
         var box = new StringBuilder();
         box.AppendLine(horizontalBorder);
         foreach (var line in lines)
         {
+            string uncolored = Regex.Replace(line, @"\[\w+\](.*?)\[/\w+\]", "$1");
+
             // Center-align each line and add padding
-            int padding = maxLength - line.Length;
+            int padding = maxLength - uncolored.Length;
             int paddingLeft = padding / 2;
             int paddingRight = padding - paddingLeft;
 
