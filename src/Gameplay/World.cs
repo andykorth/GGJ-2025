@@ -30,7 +30,7 @@ public class World
 	}
 
 	public GameUpdateService GetService(){
-		return service;;
+		return service;
 	}
 
 	public void UpdateInstance(){
