@@ -1,5 +1,6 @@
 
-public enum MatType{
+public enum MatType
+{
 	Production, RetailGoods, Services, Mining, Agricultural, Aquaculture, Salvage
 }
 
@@ -12,13 +13,15 @@ public class Material
 	public DateTime inventedDate;
 	public float rarity;
 
-	public Material(){
+	public Material()
+	{
 		// newtonsoft
 	}
 
-	public static Material Create(string name, float rarity, MatType type, string inventedByPlayerUUID = ""){
+	public static Material Create(string name, float rarity, MatType type, string inventedByPlayerUUID = "")
+	{
 		Material m = new Material();
-        m.uuid = System.Guid.NewGuid().ToString();
+		m.uuid = System.Guid.NewGuid().ToString();
 		m.name = name;
 		m.rarity = rarity;
 		m.type = type;
@@ -42,23 +45,26 @@ public class World
 	public List<Material> allMats;
 
 	public long ticks = 0; // 2^64 seconds is enough time for the rest of the universe
-    public int timescale = 1;
+	public int timescale = 1;
 
-    private GameUpdateService service;
+	private GameUpdateService service;
 
 
-    public static void Update(GameUpdateService service)
-    {	
+	public static void Update(GameUpdateService service)
+	{
 		instance.service = service;
 		instance.UpdateInstance();
 	}
 
-	public GameUpdateService GetService(){
+	public GameUpdateService GetService()
+	{
 		return service;
 	}
 
-	public void UpdateInstance(){
-		if(ticks % 10 == 0){
+	public void UpdateInstance()
+	{
+		if (ticks % 10 == 0)
+		{
 			SaveWorld();
 		}
 
@@ -74,28 +80,33 @@ public class World
 
 	}
 
-	public World(){
+	public World()
+	{
 		worldCreationDate = DateTime.Now;
 		allPlayers = new List<Player>();
 		allSites = new List<ExploredSite>();
 		allShipDesigns = new List<ShipDesign>();
-		allShipDesigns.Add( ShipDesign.BasicExplorer() );
-		allScheduledActions = new List<ScheduledTask>(); 
+		allShipDesigns.Add(ShipDesign.BasicExplorer());
+		allScheduledActions = new List<ScheduledTask>();
 		timescale = 30;
 
 	}
 
 	#region  Save and load
 
-	public void Migrate(){
-		if(allMats == null){
+	public void Migrate()
+	{
+		if (allMats == null)
+		{
 			allMats = new List<Material>();
 		}
-		void AddIfNeeded(string name, float rarity, MatType type) {
-			if(allMats.Find(m => m.name == name) == null){
+		void AddIfNeeded(string name, float rarity, MatType type)
+		{
+			if (allMats.Find(m => m.name == name) == null)
+			{
 				allMats.Add(Material.Create(name, rarity, type));
 			}
-		}	
+		}
 
 		AddIfNeeded("Iron Ore", 10f, MatType.Mining);
 		AddIfNeeded("Cobalt Ore", 1.8f, MatType.Mining);
@@ -104,86 +115,95 @@ public class World
 
 	public const string FILENAME = "../world.json";
 
-	public static void CreateOrLoad(){
+	public static void CreateOrLoad()
+	{
 		Log.Info("Create or load world...");
-		if(File.Exists(FILENAME)){
+		if (File.Exists(FILENAME))
+		{
 			instance = JSONUtilities.Deserialize<World>(FILENAME);
 			instance.Migrate();
-			foreach(var item in instance.allPlayers){
+			foreach (var item in instance.allPlayers)
+			{
 				item.Migrate();
 			}
-		}else{
+		}
+		else
+		{
 			Log.Info("No world found, writing one.");
 			instance = new World();
 			SaveWorld();
 		}
 	}
 
-	public static void SaveWorld(){
+	public static void SaveWorld()
+	{
 		string s = JSONUtilities.SerializeToString(instance);
-		
+
 		// serialize JSON directly to a file using stream
 		var serializer = JSONUtilities.serializer;
-		using (StreamWriter file = File.CreateText( FILENAME + "tmp"))
+		using (StreamWriter file = File.CreateText(FILENAME + "tmp"))
 		{
 			serializer.Serialize(file, instance);
 		}
 
 		// This ensures interrupted file writes don't destroy data. (power loss before windows NTFS commits a write to disk)
 		// the previous working backup is retained.
-		if(File.Exists(FILENAME + "tmp")){
-			if(File.Exists(FILENAME)){
+		if (File.Exists(FILENAME + "tmp"))
+		{
+			if (File.Exists(FILENAME))
+			{
 				// retain previous version so users can manually restore broken saves.
-				if(File.Exists(FILENAME + "bk" )) {
-					File.Delete(FILENAME + "bk" );
+				if (File.Exists(FILENAME + "bk"))
+				{
+					File.Delete(FILENAME + "bk");
 				}
 				File.Move(FILENAME, FILENAME + "bk");
 			}
 			//atomically replace previous:
-			File.Move(FILENAME +"tmp", FILENAME);
+			File.Move(FILENAME + "tmp", FILENAME);
 		}
 
 	}
 
-    internal ShipDesign GetShipDesign(string name)
-    {
-        return allShipDesigns.Find(x => x.name == name)!;
-    }
+	internal ShipDesign GetShipDesign(string name)
+	{
+		return allShipDesigns.Find(x => x.name == name)!;
+	}
 
-    internal void Schedule(ScheduledTask st)
-    {
-        allScheduledActions.Add(st);
+	internal void Schedule(ScheduledTask st)
+	{
+		allScheduledActions.Add(st);
 		// todo could sort less often. could make a heap.
-		allScheduledActions.OrderBy((task) => task.completedOnTick);
-    }
+		allScheduledActions = allScheduledActions.OrderBy((task) => task.completedOnTick).ToList();
+	}
 
-    internal Player? GetPlayer(string playerUUID)
-    {
-        return allPlayers.Find(x => x.uuid == playerUUID);
-    }
+	internal Player? GetPlayer(string playerUUID)
+	{
+		return allPlayers.Find(x => x.uuid == playerUUID);
+	}
 
 	internal Player? GetPlayerByName(string r)
-    {
-        return allPlayers.Find(x => x.name.ToLowerInvariant() == r.ToLowerInvariant());
-    }
+	{
+		return allPlayers.Find(x => x.name.ToLowerInvariant() == r.ToLowerInvariant());
+	}
 
 
-    internal Ship? GetShip(Player p, string? shipUUID)
-    {
-        return p.ships.Find(x => x.uuid == shipUUID);
-    }
+	internal Ship? GetShip(Player p, string? shipUUID)
+	{
+		return p.ships.Find(x => x.uuid == shipUUID);
+	}
 
-    internal ExploredSite? GetSite(string uuid)
-    {
-        return allSites.Find(x => x.uuid == uuid);
-    }
+	internal ExploredSite? GetSite(string uuid)
+	{
+		return allSites.Find(x => x.uuid == uuid);
+	}
 
-    internal ScheduledTask FindScheduledTask(string associatedScheduledTaskUUID)
-    {
-        return allScheduledActions.Find(x => x.uuid == associatedScheduledTaskUUID)!;
-    }
+	internal ScheduledTask FindScheduledTask(string associatedScheduledTaskUUID)
+	{
+		return allScheduledActions.Find(x => x.uuid == associatedScheduledTaskUUID)!;
+	}
 
 
-    #endregion
+	#endregion
 
 }

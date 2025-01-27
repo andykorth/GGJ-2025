@@ -139,16 +139,16 @@ public class ScheduledTask
 
         if (newSite.GoldilocksClass())
         {
-            output += $"{name} is a goldilocks zone planet, capable of supporting T1 or T2 constructions.\n";
+            output += $"{name} is a goldilocks zone planet, capable of supporting many happy citizens.\n";
         }
         else
         if (newSite.StandardClass())
         {
-            output += $"{name} is a habitable planet, capable of supporting T2 constructions.\n";
+            output += $"{name} is a habitable planet, although it will be a hardscrabble life.\n";
         }
         else
         {
-            output += $"Unfortunately, {name} is not habitable, and does not support construction.\n";
+            output += $"Unfortunately, {name} is a tough airless rock. Colonists will need to live in pods.\n";
             relic += 0.1f;
         }
         if (relic > 0.5)
@@ -191,7 +191,7 @@ public class ScheduledTask
 
         string output = $"It is a glorious day on {s.name}!\n";
         output += $"The [cyan]{projectName}[/cyan] you funded is finally complete.\n";
-        output += $"New pioneers stream to the planet, and the population is now {s.population}.\n";
+        output += $"New pioneers stream to the planet, and the population is now {s.population}k.\n";
         output += $"These new people will soon be looking for more retail shopping options.\n";
 
         service.Send(p, Ascii.Box(output, "yellow"));
@@ -211,6 +211,7 @@ public class ScheduledTask
 
         string output = "";
         output += $"Your [cyan]{projectName}[/cyan] is complete on {s.name}!\n";
+        output += $"(start production using the [salmon]prod[/salmon] command)\n";
 
         service.Send(p, Ascii.Box(output, "yellow"));
     }

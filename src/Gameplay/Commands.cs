@@ -681,10 +681,10 @@ public class Commands
 
                 case BuildingType.Factory:
                     output += site.GoldilocksClass()
-                        ? $"The hum of machinery fills the air on {site.name} as the first factory begins production.\n"
+                        ? $"The hum of machinery fills the air on {site.name} as construction machines build a factory.\n"
                         : site.StandardClass()
                             ? $"Industrial production sparks life into the cold plains of {site.name}.\n"
-                            : $"Sealed within domes, the factory on {site.name} churns in defiance of the lifeless expanse outside.\n";
+                            : $"Sealed within domes, the factory construction on {site.name} churns in defiance of the lifeless expanse outside.\n";
                     break;
             }
         }
@@ -805,51 +805,71 @@ public class Commands
         }
     }    
 
+    private static string SendBuildingView(Player p, GameUpdateService game, Building b)
+    {
+        string s = "";
+        s += b.LongLine();
+        s += Ascii.Header($"Building Production Menu Commands", 40);
+        s += " [salmon]start 0[/salmon] - Start production on product 0.\n";
+        s += " [salmon]stop[/salmon] - Stop production on current product.\n";
+        s += " [salmon]exit[/salmon] - Exit building prod menu.\n";
+        s += " [salmon]view[/salmon] - Show building info again.\n";
+        s += " [salmon]destroy[/salmon] - Destroy this building (you can reuse the slot).\n";
+        s += " [salmon]rename Potato Factory[/salmon] - Renames this building to 'Potato Factory'.\n";
+        game.Send(p, s);
+        return s;
+    }
+
     private static void ProdEdit(Player p, GameUpdateService game, string args)
     {
         Building? b = PullIndexArg<Building>(p, game, ref args, p.buildings);
-        if(b != null){
-            string s = "";
-            s += b.LongLine();
-            s += Ascii.Header($"Building Production Menu Commands", 40);
-            s += " [salmon]start 0[/salmon] - Start production on product 0.\n";
-            s += " [salmon]stop[/salmon] - Stop production on current product.\n";
-            s += " [salmon]exit[/salmon] - Exit building prod menu.\n";
-            s += " [salmon]view[/salmon] - Show building info again.\n";
-            s += " [salmon]destroy[/salmon] - Destroy this building (you can reuse the slot).\n";
-            s += " [salmon]rename Potato Factory[/salmon] - Renames this building to 'Potato Factory'.\n";
-            game.Send(p, s);
+        if(b != null)
+        {
+            SendBuildingView(p, game, b);
 
             game.SetCaptivePrompt(p, $"Enter building production command (eg. [salmon]view[/salmon] or [salmon]exit[/salmon]):",
-                (string response) => {
+                (string response) =>
+                {
                     string command = PullArg(ref response).ToLower();
 
-                    if(command == "exit"){
+                    if (command == "exit")
+                    {
                         game.Send(p, "Exited Building Production Menu.");
                         return true;
-                    }else if(command == "rename"){
+                    }
+                    else if (command == "rename")
+                    {
                         ProdRename(p, game, b, response);
                         return false; // keep them in the menu.
-                    }else if(command == "start"){
+                    }
+                    else if (command == "start")
+                    {
                         ProdStart(p, game, b, response);
                         return false; // keep them in the menu.
-                    }else if(command == "stop"){
+                    }
+                    else if (command == "stop")
+                    {
                         ProdStop(p, game, b, response);
                         return false; // keep them in the menu.
-                    }else if(command == "destroy"){
+                    }
+                    else if (command == "destroy")
+                    {
                         ProdDestroy(p, game, b, response);
                         return false; // keep them in the menu.
-                    }else if(command == "view"){
+                    }
+                    else if (command == "view")
+                    {
                         // resend same string.
-                        game.Send(p, s);
+                        SendBuildingView(p, game, b);
                         return false; // keep them in the menu.
                     }
 
                     return false;
-                    
+
                 });
         }
-    }    
+    }
+
 
     private static void ProdRename(Player p, GameUpdateService game, Building b, string args)
     {

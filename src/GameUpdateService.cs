@@ -35,7 +35,27 @@ public class GameUpdateService : BackgroundService
         _hubContext.Clients.All.SendAsync("ReceiveImage", url);
     }
 
-    public void SendSound(string url){
+    public void SendImage(Player p, string url){
+        if(p.connectionID == null){
+            // they aren't logged in anymore!
+            return;
+        }
+        var v = _hubContext.Clients.Client(p.connectionID);
+        if(v != null) // I don't think this can happen
+            v.SendAsync("ReceiveImage", url);
+    }
+
+    public void SendImage(string connectionID, string url){
+        if(connectionID == null){
+            // they aren't logged in anymore!
+            return;
+        }
+        var v = _hubContext.Clients.Client(connectionID);
+        if(v != null) // I don't think this can happen
+            v.SendAsync("ReceiveImage", url);
+    }
+
+    public void SendSound( string url){
         _hubContext.Clients.All.SendAsync("PlaySound", url);
     }
 

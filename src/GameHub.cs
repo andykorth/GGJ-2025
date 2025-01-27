@@ -73,7 +73,7 @@ public class GameHub : Hub
         ConnectedClients.TryAdd(Context.ConnectionId, Context.User?.Identity?.Name ?? "Anonymous");
         Log.Info($"Client connected: {Context.ConnectionId}. Total clients: {ConnectedClients.Count}");
         var service = World.instance.GetService();
-        service.SendImage("AstroTycoon.png");
+        service.SendImage(Context.ConnectionId, "AstroTycoon.png");
         Send(
 @"
 

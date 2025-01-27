@@ -34,8 +34,6 @@ public class Player : IShortLine
 	public Player()
 	{
 		// default constructor for newtonsoft
-		// use to migrate old saves.
-		Migrate();
 	}
 
 
@@ -44,6 +42,11 @@ public class Player : IShortLine
 		if (relicIDs == null) relicIDs = new List<int>();
 		if (messages == null) messages = new List<Message>();
 		if (buildings == null) buildings = new List<Building>();
+		if (ships == null) ships = new List<Ship>();
+
+		foreach(var ship in ships){
+			ship.Migrate();
+		}
 	}
 
 	public Player(string name) : this()
@@ -60,11 +63,11 @@ public class Player : IShortLine
 
 		// start with two ships!
 		Ship s = new Ship();
-		s.Init(World.instance.GetShipDesign("Pioneer I"));
+		s.Init(World.instance.GetShipDesign("Pioneer"));
 		ships.Add(s);
 
 		s = new Ship();
-		s.Init(World.instance.GetShipDesign("Pioneer II"));
+		s.Init(World.instance.GetShipDesign("Pioneer"));
 		ships.Add(s);
 
 		currentResearch = null;
@@ -138,7 +141,18 @@ public class Ship : IShortLine
 	public string? name;
 	public string uuid;
 	public ShipDesign shipDesign;
-	public ExploredSite lastLocation;
+
+	[JsonIgnore]
+	public ExploredSite lastLocation{
+		set{
+			lastLocationSiteUUID = value.uuid;
+		}
+		get {
+			return World.instance.GetSite(lastLocationSiteUUID)!;
+		}
+	}
+	public string lastLocationSiteUUID;
+
 	public ShipMission shipMission = ShipMission.Idle;
 	public float condition = 1.0f;
 	// this isn't used for the timer, but it's here so we can show it.
@@ -179,8 +193,15 @@ public class Ship : IShortLine
 		this.condition = 1.0f;
 	}
 
+	public void Migrate(){
+		if(shipDesign == null){
+			shipDesign = World.instance.GetShipDesign("Pioneer");
+		}
+	}
+
 	public string GetName()
 	{
+
 		return name ?? shipDesign.name;
 	}
 
