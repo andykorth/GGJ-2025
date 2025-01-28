@@ -224,7 +224,7 @@ public class ScheduledTask
         Material m = World.instance.allMats.Find(m => m.uuid == this.materialUUID)!;
         float quantity = this.materialAmount;
 
-        string s = $"-> {building.GetName()} on {siteName} has produced {quantity:0.00} {m.name} \n";
+        string s = $"-> Your {building.GetName()} on {siteName} has produced {quantity:0.00} {m.name} \n";
         service.Send(player, s);
 
         // requeue the task!

@@ -5,6 +5,23 @@ var connection = new signalR.HubConnectionBuilder().withUrl("/gameHub").build();
 //Disable the send button until connection is established.
 document.getElementById("sendButton").disabled = true;
 
+// Load the stored user input on page load
+document.addEventListener("DOMContentLoaded", function () {
+    const savedUserInput = localStorage.getItem("userInput");
+    if (savedUserInput) {
+        document.getElementById("userInput").value = savedUserInput;
+ 
+        // Clear the input field and refocus
+        const messageInput = document.getElementById("messageInput");
+        messageInput.value = "";
+        messageInput.focus();
+    }else{
+        const userInput = document.getElementById("userInput");
+        userInput.value = "";
+        userInput.focus();
+    }
+});
+
 connection.on("ReceiveLine", function (message) {
     const messageList = document.getElementById("messagesList");
 
@@ -89,32 +106,65 @@ connection.start().then(function () {
     return console.error(err.toString());
 });
 
-function SendCurrentMessage(){
-	var user = document.getElementById("userInput").value;
-    var message = document.getElementById("messageInput").value;
-	
-	if(message === "") return;
+let messageHistory = [];
+let historyIndex = -1;
+
+function SendCurrentMessage() {
+    const userInput = document.getElementById("userInput");
+    const messageInput = document.getElementById("messageInput");
+    const user = userInput.value;
+    const message = messageInput.value;
+
+    if (message === "") return;
 
     connection.invoke("PlayerSendCommand", user, message).catch(function (err) {
         return console.error(err.toString());
     });
-	// clear the field and refocus it.
-	document.getElementById("messageInput").value = "";
-	document.getElementById("messageInput").focus();
+
+    localStorage.setItem("userInput", user);
+
+    // Add message to history and reset history index
+    messageHistory.push(message);
+    historyIndex = -1;
+
+    // Clear the input field and refocus
+    messageInput.value = "";
+    messageInput.focus();
 }
 
 document.getElementById("sendButton").addEventListener("click", function (event) {
-	SendCurrentMessage();
-	event.preventDefault();
+    SendCurrentMessage();
+    event.preventDefault();
 });
 
 document.getElementById("messageInput").addEventListener("keydown", function (event) {
-    handleEnter(event);
-})
-
-function handleEnter(event) {
     if (event.key === "Enter") {
         event.preventDefault(); // Prevent the default Enter key action
-		SendCurrentMessage();
+        SendCurrentMessage();
+    } else if (event.key === "ArrowUp") {
+        handleHistoryNavigation(-1);
+    } else if (event.key === "ArrowDown") {
+        handleHistoryNavigation(1);
+    }
+});
+
+function handleHistoryNavigation(direction) {
+    const messageInput = document.getElementById("messageInput");
+
+    if (direction === -1 && historyIndex < messageHistory.length - 1) {
+        // Move up in history
+        historyIndex++;
+    } else if (direction === 1 && historyIndex > 0) {
+        // Move down in history
+        historyIndex--;
+    } else if (direction === 1 && historyIndex === 0) {
+        // Clear the input field when moving past the most recent history
+        historyIndex = -1;
+        messageInput.value = "";
+        return;
+    }
+
+    if (historyIndex >= 0 && historyIndex < messageHistory.length) {
+        messageInput.value = messageHistory[messageHistory.length - 1 - historyIndex];
     }
 }

@@ -15,6 +15,7 @@ public class Commands
     {
         if (Uri.TryCreate(args, UriKind.Absolute, out Uri? uriResult) &&
             (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps)) {
+            game.SendAll($"{p.name} sends an image:");
             game.SendImage(uriResult.ToString());
         } else {
             game.Send(p, $"Hey {p.name}, the provided input is not a valid URL: {args}");
@@ -25,6 +26,7 @@ public class Commands
     {
         if (Uri.TryCreate(args, UriKind.Absolute, out Uri? uriResult) &&
             (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps)) {
+            game.SendAll($"{p.name} sends a sound.");
             game.SendSound(uriResult.ToString());
         } else {
             game.Send(p, $"Hey {p.name}, the provided input is not a valid URL: {args}");
