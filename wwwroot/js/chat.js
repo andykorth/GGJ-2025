@@ -5,6 +5,21 @@ var connection = new signalR.HubConnectionBuilder().withUrl("/gameHub").build();
 //Disable the send button until connection is established.
 document.getElementById("sendButton").disabled = true;
 
+const autocompleteList = document.getElementById("autocompleteList");
+
+let contextName = "";
+let commands = [
+    "help",
+    "exit",
+    "status",
+    "send",
+    "connect",
+    "disconnect",
+    "restart",
+    "version",
+    "info"
+];
+
 // Load the stored user input on page load
 document.addEventListener("DOMContentLoaded", function () {
     const savedUserInput = localStorage.getItem("userInput");
@@ -43,6 +58,11 @@ connection.on("ReceiveLine", function (message) {
     messageList.appendChild(li);
 
     ScrollToBottom();
+});
+
+connection.on("ReceiveCommandListAndHelp", function (commandList, newContextName) {
+    commands = commandList;
+    contextName = newContextName;
 });
 
 
@@ -130,12 +150,15 @@ function SendCurrentMessage() {
     // Clear the input field and refocus
     messageInput.value = "";
     messageInput.focus();
+    hideAutocomplete();
 }
 
 document.getElementById("sendButton").addEventListener("click", function (event) {
     SendCurrentMessage();
     event.preventDefault();
 });
+
+let currentMatch = "";
 
 document.getElementById("messageInput").addEventListener("keydown", function (event) {
     if (event.key === "Enter") {
@@ -145,8 +168,46 @@ document.getElementById("messageInput").addEventListener("keydown", function (ev
         handleHistoryNavigation(-1);
     } else if (event.key === "ArrowDown") {
         handleHistoryNavigation(1);
+    } else if (event.key === "Tab" && currentMatch) {
+        event.preventDefault();
+        // Fill in the command and clear the match
+        messageInput.value = currentMatch;
+        hideAutocomplete();
     }
 });
+
+messageInput.addEventListener("input", function () {
+    const inputText = messageInput.value.toLowerCase();
+    if (!inputText) {
+        hideAutocomplete();
+        return;
+    }
+
+    // Find the singular best match
+    const bestMatch = commands.find(cmd => cmd.startsWith(inputText));
+    if (bestMatch) {
+        currentMatch = bestMatch;
+        autocompleteList.textContent = currentMatch;
+    } else {
+        hideAutocomplete();
+    }
+});
+
+
+function hideAutocomplete() {
+    currentMatch = "";
+    autocompleteList.textContent = currentMatch;
+    // keep it visible so stuff doesn't move around. I guess.
+    // autocompleteList.style.display = "none"; // Hide list if input is empty
+}
+
+
+// Hide autocomplete list on blur
+messageInput.addEventListener("blur", () => {
+    setTimeout(() => hideAutocomplete(), 100);
+});
+
+
 
 function handleHistoryNavigation(direction) {
     const messageInput = document.getElementById("messageInput");

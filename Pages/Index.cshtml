@@ -14,12 +14,13 @@
 
     <div class="row p-1">
         <div class="col-5">
-            <input type="text" class="w-100" autofocus id="messageInput" />
+            <input type="text" class="w-100" autofocus id="messageInput" placeholder="command with autocomplete, arrowkeys for history" />
         </div>
         <div class="col-1">
             <input type="button" id="sendButton" value="Send Message" />
         </div>
     </div>
+    <div id="autocompleteList"></div>
 </div>
 <script src="~/js/signalr/dist/browser/signalr.js"></script>
 <script src="~/js/chat.js"></script>

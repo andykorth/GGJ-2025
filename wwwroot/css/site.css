@@ -44,3 +44,33 @@ html {
 .terminal li {
   margin: 5px 0;
 }
+
+/* Style the autocomplete dropdown */
+#autocompleteList {
+  /* position: absolute; */
+  background-color: #111;
+  font-family: "Courier New", Courier, monospace; /* Monospaced font */
+  color: #cfc; /* Green text (classic terminal look) */
+  text-shadow: 0 0 10px #0f08; /* Subtle glow effect for text */
+
+  border: 1px solid #ccc;
+  max-height: 30px;
+  height: 30px;
+  overflow-y: auto;
+  z-index: 1000;
+  width: calc(90% - 2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease; /* Smooth height transition */
+  margin: 3px;
+  /* bottom: 4em; */
+}
+
+#autocompleteList div {
+  padding: 8px;
+  cursor: pointer;
+}
+
+#autocompleteList div:hover {
+  background-color: #0077cc;
+  color: white;
+}
