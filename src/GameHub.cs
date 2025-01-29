@@ -16,8 +16,8 @@ public class GameHub : Hub
         p.lastActivity = DateTime.Now;
         var service = World.instance.GetService();
         
-        // check if the player has a captive prompt. If so, run that.
-        p.InvokeCommand(message);
+        // inside it finds their appropriate context and method.
+        p.Invoke(service, message);
 
     }
     public void Send(string line){
@@ -49,8 +49,13 @@ public class GameHub : Hub
         }else{
             p = matches[0];
         }
+
+        // verify some key fields on a player each time
         p.connectionID = Context.ConnectionId;
         p.client = Clients.Caller;
+        if(p.currentContext == null){
+            p.currentContext = InvokeCommand.allContexts[nameof(MainContext)];
+        }
 
         return p;
     }

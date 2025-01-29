@@ -2,6 +2,7 @@
 public class MainContext : Context {
 
     public override string Name => "MainMenu";
+    public override bool rootContext => true;
 
     
     [GameCommand("Chat with all other users.")]

@@ -123,19 +123,36 @@ public class Player : IShortLine
         return buildings.Find(b => b.uuid == targetUUID);
     }
 
-    internal void InvokeCommand(string message)
+    public void Invoke(GameUpdateService game, string message)
     {
-		if(captivePrompt != null){
-            Log.Info($"[{playerName}] (captiveprompt): [{message}]");
-            service.InvokeCaptivePrompt(p, message);
-        }else{
-            // run the general command entry.
-            var m = message.Split(" ", 2, StringSplitOptions.TrimEntries);
-            InvokeCommand.Invoke(p, service, m[0], m.Length > 1 ? m[1] : "");
+		// run the general command entry.
+		var m = message.Split(" ", 2, StringSplitOptions.TrimEntries);
+		string command = m[0];
+		string args = m.Length > 1 ? m[1] : "";
 
-            Log.Info($"[{playerName}]: [{m[0]}] - [{(m.Length > 1 ? m[1] : "")}]");
+		Log.Info($"[{name}] ({currentContext.Name}): [{command}] [{args}]");
+
+        if (currentContext.Commands.TryGetValue(command.ToLower(), out var method))
+        {
+            try {
+                game.Send(this, $"[magenta]>{command}[/magenta] {Ascii.WrapColor(args, "DarkMagenta")}");
+                method.Invoke(null, [this, game, args]);
+            }
+            catch (Exception ex) {
+                if(ex.InnerException != null){
+                    game.Send(this, $"Error executing command [{command}]: [red]{ex.InnerException!.Message}[/red]");
+                    game.Send(this, ex!.InnerException!.StackTrace!);
+                    Log.Error(ex.InnerException.ToString());
+                }else{
+                    game.Send(this, $"Error executing command [{command}]: [red]{ex.Message}[/red]");
+                    game.Send(this, ex.StackTrace!);
+                    Log.Error(ex.ToString());
+                }
+            }
+            return;
         }
 
+        game.Send(this, $"Command [red]{command}[/red] not recognized. Type [salmon]help[/salmon]");
     }
 
 }

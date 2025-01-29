@@ -17,51 +17,47 @@ public class GameCommandAttribute : Attribute
     }
 }
 
-public class InvokeCommand
+internal static class InvokeCommand
 {
-    internal static readonly Dictionary<string, MethodInfo> Commands = new();
-    internal static readonly Dictionary<string, GameCommandAttribute> HelpAttrs = new();
+    // Stores all context instances by their class name
+    internal static Dictionary<string, Context> allContexts = new();
 
-    // Static constructor to populate the Commands dictionary
+    // Static constructor to populate the context instances and commands
     static InvokeCommand()
     {
-        var methods = typeof(Commands).GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .Where(m => m.GetCustomAttributes(typeof(GameCommandAttribute), false).Any());
+        // Find all classes that extend Context
+        var contextTypes = Assembly.GetExecutingAssembly()
+            .GetTypes()
+            .Where(t => t.IsSubclassOf(typeof(Context)) && !t.IsAbstract);
 
-        foreach (var method in methods)
+        foreach (var type in contextTypes)
         {
-            var attribute = method.GetCustomAttribute<GameCommandAttribute>();
-            var commandName = method.Name.ToLower();
-            Commands[commandName] = method;
-            HelpAttrs[commandName] = attribute!;
-        }
+            if (Activator.CreateInstance(type) is Context contextInstance)
+            {
+                string contextName = type.Name;
+                allContexts[contextName] = contextInstance;
 
-        Log.Info("Found commands: " + Commands.Count);
-    }
+                // Find all methods with GameCommand attribute in this context
+                var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(m => m.GetCustomAttributes(typeof(GameCommandAttribute), false).Any());
 
-    internal static void Invoke(Player p, GameUpdateService game, string command, string args)
-    {
-        if (Commands.TryGetValue(command.ToLower(), out var method))
-        {
-            try {
-                game.Send(p, $"[magenta]>{command}[/magenta] {Ascii.WrapColor(args, "DarkMagenta")}");
-                method.Invoke(null, new object[] { p, game, args });
-            }
-            catch (Exception ex) {
-                if(ex.InnerException != null){
-                    game.Send(p, $"Error executing command [{command}]: [red]{ex.InnerException!.Message}[/red]");
-                    game.Send(p, ex!.InnerException!.StackTrace!);
-                    Log.Error(ex.InnerException.ToString());
-                }else{
-                    game.Send(p, $"Error executing command [{command}]: [red]{ex.Message}[/red]");
-                    game.Send(p, ex.StackTrace!);
-                    Log.Error(ex.ToString());
+                foreach (var method in methods)
+                {
+                    var attribute = method.GetCustomAttribute<GameCommandAttribute>();
+                    var commandName = method.Name.ToLower();
+                    
+                    // Store in the context's own dictionary
+                    contextInstance.Commands[commandName] = method;
+                    contextInstance.HelpAttrs[commandName] = attribute!;
                 }
             }
-            return;
         }
 
-        game.Send(p, $"Command [red]{command}[/red] not recognized. Type help");
+        Log.Info($"Loaded {allContexts.Count} contexts.");
+        foreach (var ctx in allContexts.Values)
+        {
+            Log.Info($"Context '{ctx.GetType().Name}' has {ctx.Commands.Count} commands.");
+        }
     }
 
 }

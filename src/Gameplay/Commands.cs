@@ -38,9 +38,9 @@ public class Commands
     {
         bool showAll = args.Contains("all");
 
-        string msg = "These are the commands you can type: (To see them all, try [salmon]help all[/salmon])\n";
-        foreach(var method in InvokeCommand.Commands.Keys){
-            var a = InvokeCommand.HelpAttrs[method + ""];
+        string msg = $"These are the commands in your current context ({p.currentContext.Name}) you can type: (To see them all, try [salmon]help all[/salmon])\n";
+        foreach(var method in p.currentContext.Commands.Keys){
+            var a = p.currentContext.HelpAttrs[method + ""];
             if(showAll || !a.normallyHidden)
                 msg += $"    [salmon]{method}[/salmon] - {a.helpText} \n";
         }
