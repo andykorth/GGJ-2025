@@ -31,6 +31,16 @@ public class GameUpdateService : BackgroundService
             v.SendAsync("ReceiveLine", line);
     }
 
+    public void SendCommandList(Player p, string[] commandList, string contextName){
+        if(p.connectionID == null){
+            // they aren't logged in anymore! Thanks Joanna for finding this bug :P
+            return;
+        }
+        var v = _hubContext.Clients.Client(p.connectionID);
+        if(v != null) // I don't think this can happen
+            v.SendAsync("ReceiveCommandListAndHelp", commandList, contextName);
+    }
+
     public void SendImage(string url){
         _hubContext.Clients.All.SendAsync("ReceiveImage", url);
     }

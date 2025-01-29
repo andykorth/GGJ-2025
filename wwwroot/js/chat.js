@@ -45,18 +45,16 @@ connection.on("ReceiveLine", function (message) {
     // Replace inline color tags with corresponding <span> elements
     // Example: [red]word[/red] -> <span style="color: red;">word</span>
     const htmlMessage = message.replace(/\[([a-zA-Z]+)\](.+?)\[\/\1\]/g, (match, color, text) => {
-        // Escape color and text to prevent potential injection
+        // Escape color and text to prevent potential injection shenanigans 
         const safeColor = color.replace(/[^a-zA-Z]/g, "");
         const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const shadow = `text-shadow: 0 0 10px ${safeColor};`
         return `<span style="color: ${safeColor};${shadow}">${safeText}</span>`;
     });
 
-    // Set the HTML content of the list item
+
     li.innerHTML = htmlMessage;
-
     messageList.appendChild(li);
-
     ScrollToBottom();
 });
 
@@ -172,14 +170,15 @@ document.getElementById("messageInput").addEventListener("keydown", function (ev
         event.preventDefault();
         // Fill in the command and clear the match
         messageInput.value = currentMatch;
-        hideAutocomplete();
+        fillHelpLine();
     }
 });
 
 messageInput.addEventListener("input", function () {
     const inputText = messageInput.value.toLowerCase();
     if (!inputText) {
-        hideAutocomplete();
+        currentMatch = null;
+        fillHelpLine();
         return;
     }
 
@@ -187,27 +186,53 @@ messageInput.addEventListener("input", function () {
     const bestMatch = commands.find(cmd => cmd.startsWith(inputText));
     if (bestMatch) {
         currentMatch = bestMatch;
-        autocompleteList.textContent = currentMatch;
     } else {
-        hideAutocomplete();
+        currentMatch = null;
     }
+    fillHelpLine();
 });
 
+function fillHelpLine() {
+    let autocompleteList = document.getElementById("autocompleteList");
 
-function hideAutocomplete() {
-    currentMatch = "";
-    autocompleteList.textContent = currentMatch;
-    // keep it visible so stuff doesn't move around. I guess.
-    // autocompleteList.style.display = "none"; // Hide list if input is empty
+    // Clear previous content
+    autocompleteList.innerHTML = "";
+
+    var secondPart = currentMatch;
+    if(currentMatch == null || currentMatch === ""){
+        secondPart = commands;
+    }
+
+    // Create elements for the colored text
+    const contextSpan = document.createElement("span");
+    contextSpan.style.color = "yellow";
+    contextSpan.textContent = contextName;
+
+    const dashSpan = document.createElement("span");
+    dashSpan.textContent = " : ";
+
+    const matchSpan = document.createElement("span");
+    matchSpan.style.color = "magenta";
+    matchSpan.textContent = secondPart;
+
+    // Append elements to the autocomplete list
+    autocompleteList.appendChild(contextSpan);
+    autocompleteList.appendChild(dashSpan);
+    autocompleteList.appendChild(matchSpan);
 }
 
+// function hideAutocomplete() {
+//     currentMatch = "";
+//     const autocompleteList = document.getElementById("autocompleteList");
+//     if (autocompleteList) {
+//         autocompleteList.innerHTML = ""; // Clears all children instead of removing the element
+//     }
+// }
 
-// Hide autocomplete list on blur
-messageInput.addEventListener("blur", () => {
-    setTimeout(() => hideAutocomplete(), 100);
-});
-
-
+// // Hide autocomplete list on blur
+// messageInput.addEventListener("blur", () => {
+//     setTimeout(() => hideAutocomplete(), 100);
+// });
 
 function handleHistoryNavigation(direction) {
     const messageInput = document.getElementById("messageInput");

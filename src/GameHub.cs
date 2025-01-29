@@ -17,16 +17,7 @@ public class GameHub : Hub
         var service = World.instance.GetService();
         
         // check if the player has a captive prompt. If so, run that.
-        if(p.captivePrompt != null){
-            Log.Info($"[{playerName}] (captiveprompt): [{message}]");
-            service.InvokeCaptivePrompt(p, message);
-        }else{
-            // run the general command entry.
-            var m = message.Split(" ", 2, StringSplitOptions.TrimEntries);
-            InvokeCommand.Invoke(p, service, m[0], m.Length > 1 ? m[1] : "");
-
-            Log.Info($"[{playerName}]: [{m[0]}] - [{(m.Length > 1 ? m[1] : "")}]");
-        }
+        p.InvokeCommand(message);
 
     }
     public void Send(string line){

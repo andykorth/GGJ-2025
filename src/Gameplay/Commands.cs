@@ -142,6 +142,8 @@ public class Commands
     [GameCommand("View and interact with your empire's ships.")]
     public static void Ship(Player p, GameUpdateService game, string args)
     {
+        game.SendCommandList(p, new string[]{"explore", "rename", "view", "repair"}, "ship");
+
         if(CheckArg("explore", ref args)){
             ShipExplore(p, game, args);
             return;

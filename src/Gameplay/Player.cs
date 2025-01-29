@@ -31,6 +31,9 @@ public class Player : IShortLine
 	[NonSerialized]
 	internal string? captivePromptMsg;
 
+	[NonSerialized]
+	public Context currentContext;
+
 	public Player()
 	{
 		// default constructor for newtonsoft
@@ -119,6 +122,22 @@ public class Player : IShortLine
     {
         return buildings.Find(b => b.uuid == targetUUID);
     }
+
+    internal void InvokeCommand(string message)
+    {
+		if(captivePrompt != null){
+            Log.Info($"[{playerName}] (captiveprompt): [{message}]");
+            service.InvokeCaptivePrompt(p, message);
+        }else{
+            // run the general command entry.
+            var m = message.Split(" ", 2, StringSplitOptions.TrimEntries);
+            InvokeCommand.Invoke(p, service, m[0], m.Length > 1 ? m[1] : "");
+
+            Log.Info($"[{playerName}]: [{m[0]}] - [{(m.Length > 1 ? m[1] : "")}]");
+        }
+
+    }
+
 }
 
 public class Relic : IShortLine
