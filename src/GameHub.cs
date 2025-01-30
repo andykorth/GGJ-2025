@@ -54,7 +54,7 @@ public class GameHub : Hub
         p.connectionID = Context.ConnectionId;
         p.client = Clients.Caller;
         if(p.currentContext == null){
-            p.currentContext = InvokeCommand.allContexts[nameof(MainContext)];
+            p.SetContext(InvokeCommand.allContexts[nameof(MainContext)], World.instance.GetService());
         }
 
         return p;
@@ -81,6 +81,10 @@ To begin, [cyan]enter your username above[/cyan], then send your first command b
 Try '[salmon]help[/salmon]' to get started.
                                                                                                                                                        
 ");
+        // special logic for sending of first menu. Even before player is identified.
+        var c= InvokeCommand.allContexts[nameof(MainContext)];
+        string[] commands = c.Commands.Keys.ToArray();
+        Clients.Caller.SendAsync("ReceiveCommandListAndHelp", commands, c.Name);
 
         return base.OnConnectedAsync();
     }
@@ -96,7 +100,10 @@ Try '[salmon]help[/salmon]' to get started.
         foreach(var p in World.instance.allPlayers){
             if(p.connectionID == Context.ConnectionId){
                 p.connectionID = null;
+                // clear context so they can be sent context if they return.
+                p.currentContext = null!;
             }
+            
         }
         
         return base.OnDisconnectedAsync(exception);

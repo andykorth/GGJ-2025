@@ -8,17 +8,7 @@ document.getElementById("sendButton").disabled = true;
 const autocompleteList = document.getElementById("autocompleteList");
 
 let contextName = "";
-let commands = [
-    "help",
-    "exit",
-    "status",
-    "send",
-    "connect",
-    "disconnect",
-    "restart",
-    "version",
-    "info"
-];
+let commands = [];
 
 // Load the stored user input on page load
 document.addEventListener("DOMContentLoaded", function () {
@@ -59,8 +49,10 @@ connection.on("ReceiveLine", function (message) {
 });
 
 connection.on("ReceiveCommandListAndHelp", function (commandList, newContextName) {
+    console.log("ReceiveCommandListAndHelp: " + newContextName + " commands: " + commandList)
     commands = commandList;
     contextName = newContextName;
+    fillHelpLine();
 });
 
 
@@ -148,7 +140,9 @@ function SendCurrentMessage() {
     // Clear the input field and refocus
     messageInput.value = "";
     messageInput.focus();
-    hideAutocomplete();
+    
+    currentMatch = null;
+    fillHelpLine();
 }
 
 document.getElementById("sendButton").addEventListener("click", function (event) {
@@ -170,6 +164,7 @@ document.getElementById("messageInput").addEventListener("keydown", function (ev
         event.preventDefault();
         // Fill in the command and clear the match
         messageInput.value = currentMatch;
+        currentMatch = null;
         fillHelpLine();
     }
 });

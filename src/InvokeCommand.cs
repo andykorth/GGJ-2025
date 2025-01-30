@@ -38,8 +38,8 @@ internal static class InvokeCommand
                 allContexts[contextName] = contextInstance;
 
                 // Find all methods with GameCommand attribute in this context
-                var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                    .Where(m => m.GetCustomAttributes(typeof(GameCommandAttribute), false).Any());
+                var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy )
+                    .Where(m => m.GetCustomAttributes(typeof(GameCommandAttribute), true).Any());
 
                 foreach (var method in methods)
                 {
@@ -58,6 +58,10 @@ internal static class InvokeCommand
         {
             Log.Info($"Context '{ctx.GetType().Name}' has {ctx.Commands.Count} commands.");
         }
+    }
+
+    public static void Load(){
+        // :)
     }
 
 }

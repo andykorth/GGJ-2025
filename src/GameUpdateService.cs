@@ -79,13 +79,13 @@ public class GameUpdateService : BackgroundService
         _hubContext.Clients.Client(connectionID).SendAsync("ReceiveLine", line);
     }
 
-
     internal void SetCaptivePrompt(Player p, string message, Func<string, bool> promptFunc)
     {
         Send(p, message);
         p.captivePrompt = promptFunc;
         p.captivePromptMsg = message;
     }
+    
     internal void SetCaptiveYNPrompt(Player p, string message, Action<bool> responseFunc)
     {
         Send(p, message);

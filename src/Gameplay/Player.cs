@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
@@ -39,7 +40,6 @@ public class Player : IShortLine
 		// default constructor for newtonsoft
 	}
 
-
 	internal void Migrate()
 	{
 		if (relicIDs == null) relicIDs = new List<int>();
@@ -78,6 +78,17 @@ public class Player : IShortLine
 		Migrate();
 	}
 
+    public void SetContext(Context c, GameUpdateService service){
+
+        this.currentContext = c;
+        string[] commands = c.Commands.Keys.ToArray();
+        service.SendCommandList(this, commands, c.Name );
+
+		Log.Info($"[{name}] swap to context: {currentContext.Name})");
+
+		c.EnterContext(this, service);
+    }
+
 	public List<ExploredSite> GetExploredSites()
 	{
 		List<ExploredSite> exploredSites = new List<ExploredSite>();
@@ -97,8 +108,6 @@ public class Player : IShortLine
 		}
 		return list;
 	}
-
-
 
 	internal void Send(string output)
 	{

@@ -30,6 +30,8 @@ app.MapRazorPages();
 
 // gameplay launching stuff.
 World.CreateOrLoad();
+// Kick this off to start the static initializer
+InvokeCommand.Load();
 
 // Configure middleware
 app.MapHub<GameHub>("/gameHub"); // The client connects to "/gamehub"
