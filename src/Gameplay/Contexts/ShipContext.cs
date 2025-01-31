@@ -5,19 +5,17 @@ public class ShipContext : Context {
 
     public override void EnterContext(Player p, GameUpdateService game)
     {
+        p.Send("[yellow]Ship Menu:[/yellow]");
         string s = Context.ShowShips(20, p, 0);
-        s += Ascii.Header("Ship Commands", 40);
-
         game.Send(p, s);
     }
 
     [GameCommand("explore 0: Send your first ship to explore")]
-    public static void ShipExplore(Player p, GameUpdateService game, string args)
+    public static void Explore(Player p, GameUpdateService game, string args)
     {
-        int index = 0;
-        if(int.TryParse(args, out index)){
+        Ship? s = PullIndexArg<Ship>(p, game, ref args, p.ships);
+        if(s != null){
             string output = "Begin exploration mission with:\n";
-            Ship s = p.ships[index];
             output += s.ShortLine(p, -1);
             output += s.LongLine();
 
@@ -27,7 +25,7 @@ public class ShipContext : Context {
                 output += $" Exploration mission will take {ticks} seconds.";
 
                 game.Send(p, output);
-                game.SetCaptiveYNPrompt(p, "Do you want to start this mission? (y/n)", (bool response) => {
+                p.SetCaptiveYNPrompt( "Do you want to start this mission? (y/n)", (bool response) => {
                     if(response)
                         StartExploration(ticks, p, s);
                     else
@@ -37,10 +35,7 @@ public class ShipContext : Context {
                 output += $" Ship is already on a mission!";
                 game.Send(p, output);
             }
-            return;
-
         }
-        game.Send(p, $"Invalid ship exploration args [{args}]");
 
     }
 
@@ -60,35 +55,26 @@ public class ShipContext : Context {
     }
 
     [GameCommand("rename 0 Big Bertha: Rename your first ship to 'Big Bertha'")]
-    public static void ShipRename(Player p, GameUpdateService game, string args)
+    public static void Rename(Player p, GameUpdateService game, string args)
     {
-        int index;
-        string indexS = PullArg(ref args);
-        if(int.TryParse(indexS, out index)){
-            Ship ship = p.ships[index];
+        Ship? ship = PullIndexArg<Ship>(p, game, ref args, p.ships);
+        if(ship != null){
+            game.Send(p, $"Ship {ship.name} renamed to {args}");
             ship.name = args;
-            game.Send(p, $"Ship {index} renamed to {args}");
-        }else{
-            game.Send(p, $"Bad index for rename [{indexS}]");
         }
     }   
 
     [GameCommand("view 0: View details of the specified ship.")]
-    public static void ShipView(Player p, GameUpdateService game, string args)
+    public static void View(Player p, GameUpdateService game, string args)
     {
-        int index;
-        string indexS = PullArg(ref args);
-        if(int.TryParse(indexS, out index)){
-            Ship ship = p.ships[index];
-
+        Ship? ship = PullIndexArg<Ship>(p, game, ref args, p.ships);
+        if(ship != null){
             game.Send(p, ship.ShortLine(p, -1));
             game.Send(p, ship.LongLine());
-        }else{
-            game.Send(p, $"Bad index for ship viewing [{indexS}]");
         }
     }
 
-    private static void ShipRepair(Player p, GameUpdateService game, string args)
+    private static void Repair(Player p, GameUpdateService game, string args)
     {
         throw new NotImplementedException();
     }

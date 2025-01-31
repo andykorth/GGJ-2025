@@ -16,7 +16,8 @@ public class MessageContext : Context {
         game.Send(p, s);
     }
 
-    private static void MessageView(Player p, GameUpdateService game, string args)
+    [GameCommand("view 0: View the contents of the message")]
+    public static void View(Player p, GameUpdateService game, string args)
     {
         int index;
         string indexS = PullArg(ref args);
@@ -39,7 +40,7 @@ public class MessageContext : Context {
                     game.Send(p, s);
                 }else{
                     game.Send(p, s);
-                    game.SetCaptiveYNPrompt(p, $"Do you want to join {from} on {site!.name}? (y/n)", (bool response) => {
+                    p.SetCaptiveYNPrompt( $"Do you want to join {from} on {site!.name}? (y/n)", (bool response) => {
                     if(response){
                         p.exploredSiteUUIDs.Add(site.uuid);
                         game.Send(p, $"{site!.name} added to your site list!");
@@ -54,9 +55,10 @@ public class MessageContext : Context {
         }
     }
 
-    private static void MessageSend(Player p, GameUpdateService game, string args)
+    [GameCommand("send: Send a text message to someone.")]
+    public static void Send(Player p, GameUpdateService game, string args)
     {
-        game.SetCaptivePrompt(p, "Who do you want to message? (or [salmon]cancel[/salmon] or [salmon]who[/salmon])",
+        p.SetCaptivePrompt( "Who do you want to message? (or [salmon]cancel[/salmon] or [salmon]who[/salmon])",
             (string response) => {
                 string r = response.ToLower();
                 // try to find a player name
@@ -82,11 +84,11 @@ public class MessageContext : Context {
 
     private static void MessageSendReally(Player p, GameUpdateService game, Player recipient)
     {
-        if(p == null) Log.Error("Missing player sending message.");
-        if(recipient == null) Log.Error("Missing message recipient.");
+        if(p == null){ Log.Error("Missing player sending message."); return; }
+        if(recipient == null){ Log.Error("Missing message recipient."); return; }
 
         game.Send(p, $"You are messaging {recipient.name}.");
-        game.SetCaptivePrompt(p, "Enter your message text now.",
+        p.SetCaptivePrompt("Enter your message text now.",
             (string response) => {
                 Message m = new Message(p, global::Message.MessageType.TextMail, response);
                 recipient.messages.Add(m);

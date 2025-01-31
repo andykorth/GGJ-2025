@@ -54,7 +54,7 @@ public class GameHub : Hub
         p.connectionID = Context.ConnectionId;
         p.client = Clients.Caller;
         if(p.currentContext == null){
-            p.SetContext(InvokeCommand.allContexts[nameof(MainContext)], World.instance.GetService());
+            p.SetContext<MainContext>();
         }
 
         return p;

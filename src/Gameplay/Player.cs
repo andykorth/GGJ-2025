@@ -28,14 +28,11 @@ public class Player : IShortLine
 	internal string? connectionID;
 
 	[NonSerialized]
-	internal Func<string, bool>? captivePrompt;
-	[NonSerialized]
-	internal string? captivePromptMsg;
-
-	[NonSerialized]
 	public Context currentContext;
+	[NonSerialized]
+    public object ContextContext;
 
-	public Player()
+    public Player()
 	{
 		// default constructor for newtonsoft
 	}
@@ -78,15 +75,66 @@ public class Player : IShortLine
 		Migrate();
 	}
 
-    public void SetContext(Context c, GameUpdateService service){
-
+	public void SetContext<T>() where T : Context{
+		Context c = InvokeCommand.allContexts[typeof(T).FullName];
         this.currentContext = c;
         string[] commands = c.Commands.Keys.ToArray();
+
+		var service = World.instance.GetService();
         service.SendCommandList(this, commands, c.Name );
 
 		Log.Info($"[{name}] swap to context: {currentContext.Name})");
 
 		c.EnterContext(this, service);
+    }
+
+	internal void SetContextTo(Context c)
+    {
+		this.currentContext = c;
+        string[] commands = c.Commands.Keys.ToArray();
+
+		var service = World.instance.GetService();
+        service.SendCommandList(this, commands, c.Name );
+
+		Log.Info($"[{name}] set to context: {currentContext.Name})");
+
+		c.EnterContext(this, service);
+    }
+
+	
+    internal void SetCaptivePrompt(string message, Func<string, bool> promptFunc)
+    {
+        CaptiveContext c = new()
+        {
+            captivePrompt = promptFunc,
+            captivePromptMsg = message,
+            previousContext = currentContext
+        };
+
+        SetContextTo(c);
+    }
+
+    internal void SetCaptiveYNPrompt(string message, Action<bool> responseFunc)
+    {
+        CaptiveContext c = new()
+        {
+			captivePromptMsg = message,
+            previousContext = currentContext,
+            captivePrompt = (string r) =>
+            {
+                if (r == "y" || r == "n")
+                {
+                    responseFunc(r == "y");
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        };
+
+        SetContextTo(c);
     }
 
 	public List<ExploredSite> GetExploredSites()
@@ -140,28 +188,7 @@ public class Player : IShortLine
 		string args = m.Length > 1 ? m[1] : "";
 
 		Log.Info($"[{name}] ({currentContext.Name}): [{command}] [{args}]");
-
-        if (currentContext.Commands.TryGetValue(command.ToLower(), out var method))
-        {
-            try {
-                game.Send(this, $"[magenta]>{command}[/magenta] {Ascii.WrapColor(args, "DarkMagenta")}");
-                method.Invoke(null, [this, game, args]);
-            }
-            catch (Exception ex) {
-                if(ex.InnerException != null){
-                    game.Send(this, $"Error executing command [{command}]: [red]{ex.InnerException!.Message}[/red]");
-                    game.Send(this, ex!.InnerException!.StackTrace!);
-                    Log.Error(ex.InnerException.ToString());
-                }else{
-                    game.Send(this, $"Error executing command [{command}]: [red]{ex.Message}[/red]");
-                    game.Send(this, ex.StackTrace!);
-                    Log.Error(ex.ToString());
-                }
-            }
-            return;
-        }
-
-        game.Send(this, $"Command [red]{command}[/red] not recognized. Type [salmon]help[/salmon]");
+		currentContext.Invoke(this, game, command, args);
     }
 
 }

@@ -11,19 +11,63 @@ public abstract class Context
     internal Dictionary<string, MethodInfo> Commands { get; } = new();
     internal Dictionary<string, GameCommandAttribute> HelpAttrs { get; } = new();
 
+    internal virtual void Invoke(Player p, GameUpdateService game, string command, string args)
+    {
+        if (this.Commands.TryGetValue(command.ToLower(), out var method))
+        {
+            try {
+                game.Send(p, $"[magenta]>{command}[/magenta] {Ascii.WrapColor(args, "DarkMagenta")}");
+                method.Invoke(null, [p, game, args]);
+            }
+            catch (Exception ex) {
+                if(ex.InnerException != null){
+                    game.Send(p, $"Error executing command [{command}]: [red]{ex.InnerException!.Message}[/red]");
+                    game.Send(p, ex!.InnerException!.StackTrace!);
+                    Log.Error(ex.InnerException.ToString());
+                }else{
+                    game.Send(p, $"Error executing command [{command}]: [red]{ex.Message}[/red]");
+                    game.Send(p, ex.StackTrace!);
+                    Log.Error(ex.ToString());
+                }
+            }
+            return;
+        }
+
+        game.Send(p, $"Command [red]{command}[/red] not recognized. Type [salmon]help[/salmon]");
+    }
+
     [GameCommand("See this help message for your current context.", true)]
     public static void Help(Player p, GameUpdateService game, string args)
     {
         bool showAll = args.Contains("all");
-
-        string msg = $"These are the commands in your current context ({p.currentContext.Name}) you can type: (To see them all, try [salmon]help all[/salmon])\n";
-        foreach(var method in p.currentContext.Commands.Keys){
-            var a = p.currentContext.HelpAttrs[method + ""];
+        var c = p.currentContext;
+        
+        int hiddenCount = 0;
+        string list = "";
+        foreach(var method in c.Commands.Keys){
+            var a = c.HelpAttrs[method + ""];
+            if(a.normallyHidden) hiddenCount += 1;
             if(showAll || !a.normallyHidden)
-                msg += $"    [salmon]{method}[/salmon] - {a.helpText} \n";
+                list += $"    [salmon]{method}[/salmon] - {a.helpText} \n";
         }
 
+        string hidden = "";
+        if(hiddenCount > 1){
+            hidden = $"(To see {hiddenCount} hidden commands, use [salmon]help all[/salmon])";
+        }
+
+        string msg = "";
+        msg += $"[yellow]{c.Name} Menu:[/yellow]\n";
+        msg += $"These are the commands in your current context [yellow]({c.Name})[/yellow] you can type. {hidden}\n";
+        msg += list;
+
         game.Send(p, msg);
+    }
+
+    [GameCommand("Exit current context.", true)]
+    public static void Exit(Player p, GameUpdateService game, string args)
+    {
+        p.SetContext<MainContext>();
     }
 
     internal static string ShowShips(int showMax, Player p, int start)
@@ -62,6 +106,34 @@ public abstract class Context
     {
         var list = p.GetRelics();
         return ShowList(list.Cast<IShortLine>().ToList(), "Unresearched Relics", "---", showMax, p, start);
+    }
+
+
+    internal static int PullIntArg(Player p, ref string args){
+        string indexS = PullArg(ref args);
+        int index = -1;
+        if(int.TryParse(indexS, out index)){
+            return index;
+        }else{
+            p.Send( $"You were supposed to provide a number, not [{indexS}]!");
+            return -1;
+        }
+    }
+
+
+    internal static T? PullIndexArg<T>(Player p, GameUpdateService game, ref string args, List<T> list){
+        string indexS = PullArg(ref args);
+        int index = -1;
+        if(int.TryParse(indexS, out index)){
+            if(index < 0 || index >= list.Count){
+                game.Send(p, $"Invalid range: [{indexS}] is not between {0} and {list.Count-1}, inclusive.");
+                return default(T);
+            }
+            return list[index];
+        }else{
+            game.Send(p, $"Bad index specified: [{indexS}] That should have been a number between {0} and {list.Count-1}, inclusive.");
+            return default(T);
+        }
     }
 
     internal static string PullArg(ref string args){

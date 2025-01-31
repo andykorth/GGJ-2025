@@ -13,13 +13,19 @@ public class MainContext : Context {
     [GameCommand("Menu: View and interact with your empire's ships.")]
     public static void Ship(Player p, GameUpdateService game, string args)
     {
-        p.SetContext(InvokeCommand.allContexts[nameof(ShipContext)], World.instance.GetService());
+        p.SetContext<ShipContext>();
     }
 
     [GameCommand("Menu: Check your messages and invitations from other players")]
     public static void Message(Player p, GameUpdateService game, string args)
     {
-        p.SetContext(InvokeCommand.allContexts[nameof(MessageContext)], World.instance.GetService());
+        p.SetContext<MessageContext>();
+    }
+
+    [GameCommand("Menu: Check the production of your buildings")]
+    public static void Prod(Player p, GameUpdateService game, string args)
+    {
+        p.SetContext<ProdContext>();
     }
 
 
@@ -92,12 +98,9 @@ public class MainContext : Context {
     {
         var sortedPlayers = World.instance.allPlayers.OrderByDescending(p => p.lastActivity);
 
-        int start = 0;
-        int.TryParse(args, out start);
-
-        var list = p.ships;
+        int start = PullIntArg(p, ref args);
+        
         string s = ShowList(sortedPlayers.Cast<IShortLine>().ToList(), "Players", "ship", 20, p, start);
-
         game.Send(p, s);
     }
 

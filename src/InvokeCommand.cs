@@ -45,6 +45,10 @@ internal static class InvokeCommand
                 {
                     var attribute = method.GetCustomAttribute<GameCommandAttribute>();
                     var commandName = method.Name.ToLower();
+
+                    if(commandName == "exit" && contextInstance.rootContext){
+                        continue;
+                    }
                     
                     // Store in the context's own dictionary
                     contextInstance.Commands[commandName] = method;
@@ -61,7 +65,7 @@ internal static class InvokeCommand
     }
 
     public static void Load(){
-        // :)
+        // calls the static initializer.
     }
 
 }

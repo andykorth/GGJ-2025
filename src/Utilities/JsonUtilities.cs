@@ -24,7 +24,7 @@ public class JSONUtilities {
 		serializer = JsonSerializer.Create(settings);
 	}
 
-	public static string lastError;
+	public static string? lastError;
 	
 	public static T Deserialize<T>(string filepath){
 		// Debug.Log ("Attemping load from: " + filepath);
