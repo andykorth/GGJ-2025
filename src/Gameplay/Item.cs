@@ -4,23 +4,13 @@ using System;
 public class Item
 {
     [JsonIgnore] 
-    public Material Material { get; private set; }
-    public int Amount { get; private set; }
+    public Material Material { get;  set; }
+    public int Amount { get;  set; }
 
     public Item(Material material, int amount)
     {
         Material = material;
         Amount = amount;
-    }
-
-    public void AddAmount(int amount) => Amount += amount;
-
-    public bool RemoveAmount(int amount)
-    {
-        if (amount > Amount)
-            return false;
-        Amount -= amount;
-        return true;
     }
 
     public string ShortLine() => $"{Material.name}: {Amount}";

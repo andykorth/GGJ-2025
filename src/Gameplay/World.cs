@@ -1,4 +1,7 @@
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
 public enum MatType
 {
 	Production, RetailGoods, Services, Mining, Agricultural, Aquaculture, Salvage
@@ -43,6 +46,9 @@ public class World
 	public List<ShipDesign> allShipDesigns;
 	public List<ScheduledTask> allScheduledActions;
 	public List<Material> allMats;
+    public List<Offer> offers = new List<Offer>();  // List of active sell offers
+    public List<Request> requests = new List<Request>(); // List of active buy requests
+
 
 	public long ticks = 0; // 2^64 seconds is enough time for the rest of the universe
 	public int timescale = 1;
@@ -88,6 +94,8 @@ public class World
 		allShipDesigns = new List<ShipDesign>();
 		allShipDesigns.Add(ShipDesign.BasicExplorer());
 		allScheduledActions = new List<ScheduledTask>();
+		offers = new List<Offer>();
+		requests = new List<Request>();
 		timescale = 30;
 
 	}
@@ -182,6 +190,12 @@ public class World
 		return allPlayers.Find(x => x.uuid == playerUUID);
 	}
 
+
+	internal Material? GetMaterial(string matUUID)
+	{
+		return allMats.Find(x => x.uuid == matUUID);
+	}
+
 	internal Player? GetPlayerByName(string r)
 	{
 		return allPlayers.Find(x => x.name.ToLowerInvariant() == r.ToLowerInvariant());
@@ -211,4 +225,184 @@ public class World
 
 	#endregion
 
+
+    /// <summary>
+    /// Posts an offer to sell a material.
+    /// The material is removed from the seller's inventory immediately.
+    /// </summary>
+    public bool PostOffer(Player seller, Material material, int amount, int pricePerUnit)
+    {
+        if (!seller.HasMaterial(material, amount))
+        {
+            seller.Send("You do not have enough of this material.");
+            return false;
+        }
+
+        seller.RemoveMaterial(material, amount);
+        Offer newOffer = new Offer(seller, material, amount, pricePerUnit);
+        offers.Add(newOffer);
+
+        seller.Send($"Offer posted: {amount} {material.name} for {pricePerUnit} each.");
+        return true;
+    }
+
+    /// <summary>
+    /// Posts a request to buy a material.
+    /// The requested amount and total price are reserved from the buyer’s cash.
+    /// </summary>
+    public bool PostRequest(Player buyer, Material material, int amount, int pricePerUnit)
+    {
+        int totalCost = amount * pricePerUnit;
+        if (buyer.cash < totalCost)
+        {
+            buyer.Send("You do not have enough cash to make this request.");
+            return false;
+        }
+
+        buyer.cash -= totalCost; // Reserve funds for this request
+        Request newRequest = new Request(buyer, material, amount, pricePerUnit);
+        requests.Add(newRequest);
+
+        buyer.Send($"Request posted: {amount} {material.name} for {pricePerUnit} each.");
+        return true;
+    }
+
+    /// <summary>
+    /// Attempts to fulfill existing requests with new offers and vice versa.
+    /// </summary>
+    public void ProcessTrades()
+    {
+        List<Offer> fulfilledOffers = new List<Offer>();
+        List<Request> fulfilledRequests = new List<Request>();
+
+        foreach (var request in requests)
+        {
+            var matchingOffers = offers
+                .Where(o => o.Material.uuid == request.Material.uuid && o.PricePerUnit <= request.PricePerUnit)
+                .OrderBy(o => o.PricePerUnit) // Prioritize cheapest offers
+                .ToList();
+
+            foreach (var offer in matchingOffers)
+            {
+                int tradeAmount = Math.Min(offer.Amount, request.Amount);
+                int totalCost = tradeAmount * offer.PricePerUnit;
+
+                request.Buyer.AddItem(request.Material, tradeAmount);
+                offer.Seller.cash += totalCost;
+
+                offer.Amount -= tradeAmount;
+                request.Amount -= tradeAmount;
+
+                if (offer.Amount == 0) fulfilledOffers.Add(offer);
+                if (request.Amount == 0) fulfilledRequests.Add(request);
+
+                if (request.Amount == 0) break;
+            }
+        }
+
+        // Remove fulfilled orders
+        offers.RemoveAll(o => fulfilledOffers.Contains(o));
+        requests.RemoveAll(r => fulfilledRequests.Contains(r));
+    }
+}
+
+public class Offer
+{
+    public Player Seller { get; }
+    public Material Material { get; }
+    public int Amount { get; set; }
+    public int PricePerUnit { get; }
+
+    public Offer(Player seller, Material material, int amount, int pricePerUnit)
+    {
+        Seller = seller;
+        Material = material;
+        Amount = amount;
+        PricePerUnit = pricePerUnit;
+    }
+}
+
+public class Request
+{
+    public Player Buyer { get; }
+    public Material Material { get; }
+    public int Amount { get; set; }
+    public int PricePerUnit { get; }
+
+    public Request(Player buyer, Material material, int amount, int pricePerUnit)
+    {
+        Buyer = buyer;
+        Material = material;
+        Amount = amount;
+        PricePerUnit = pricePerUnit;
+    }
+}
+
+
+public class OfferJsonConverter : JsonConverter<Offer>
+{
+    public override void WriteJson(JsonWriter writer, Offer value, JsonSerializer serializer)
+    {
+        JObject obj = new JObject
+        {
+            { "sellerUUID", value.Seller.uuid },
+            { "materialUUID", value.Material.uuid },
+            { "amount", value.Amount },
+            { "pricePerUnit", value.PricePerUnit }
+        };
+        obj.WriteTo(writer);
+    }
+
+    public override Offer ReadJson(JsonReader reader, Type objectType, Offer existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        JObject obj = JObject.Load(reader);
+        string sellerUUID = obj["sellerUUID"].ToString();
+        string materialUUID = obj["materialUUID"].ToString();
+        int amount = obj["amount"]?.ToObject<int>() ?? 0;
+        int pricePerUnit = obj["pricePerUnit"]?.ToObject<int>() ?? 0;
+
+        Player? seller = World.instance.GetPlayer(sellerUUID);
+        Material? material = World.instance.GetMaterial(materialUUID);
+
+        if (seller == null || material == null)
+        {
+            throw new JsonSerializationException("Failed to deserialize Offer: Invalid UUID reference.");
+        }
+
+        return new Offer(seller, material, amount, pricePerUnit);
+    }
+}
+
+public class RequestJsonConverter : JsonConverter<Request>
+{
+    public override void WriteJson(JsonWriter writer, Request value, JsonSerializer serializer)
+    {
+        JObject obj = new JObject
+        {
+            { "buyerUUID", value.Buyer.uuid },
+            { "materialUUID", value.Material.uuid },
+            { "amount", value.Amount },
+            { "pricePerUnit", value.PricePerUnit }
+        };
+        obj.WriteTo(writer);
+    }
+
+    public override Request ReadJson(JsonReader reader, Type objectType, Request existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        JObject obj = JObject.Load(reader);
+        string buyerUUID = obj["buyerUUID"].ToString();
+        string materialUUID = obj["materialUUID"].ToString();
+        int amount = obj["amount"]?.ToObject<int>() ?? 0;
+        int pricePerUnit = obj["pricePerUnit"]?.ToObject<int>() ?? 0;
+		
+        Player? buyer = World.instance.GetPlayer(buyerUUID);
+        Material? material = World.instance.GetMaterial(materialUUID);
+
+        if (buyer == null || material == null)
+        {
+            throw new JsonSerializationException("Failed to deserialize Request: Invalid UUID reference.");
+        }
+
+        return new Request(buyer, material, amount, pricePerUnit);
+    }
 }

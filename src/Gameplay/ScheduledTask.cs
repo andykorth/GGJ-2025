@@ -227,8 +227,18 @@ public class ScheduledTask
         string s = $"-> Your {building.GetName()} on {siteName} has produced {quantity:0.00} {m.name} \n";
         service.Send(player, s);
 
-        // todo: Add the material UUID and quantity to the player's inventory.
-        player.add
+        if(building.leftoverMaterialUUID == this.materialUUID){
+            quantity += building.leftovers;
+        }else{
+            building.leftovers = 0f;
+        }
+
+        int intQuantity = (int) quantity;
+        float leftovers = quantity - intQuantity;
+        building.leftovers  = leftovers;
+        building.leftoverMaterialUUID = this.materialUUID;
+
+        player.AddItem(m, intQuantity);
 
         // requeue the task!
         Reschedule();

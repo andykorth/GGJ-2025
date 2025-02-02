@@ -18,6 +18,7 @@ public class Player : IShortLine
 	public DateTime created;
 	public List<Message> messages;
 	public List<Building> buildings;
+	public List<Item> items;
 
 	public string? currentResearch;
 	public float currentResearchProgress;
@@ -43,6 +44,7 @@ public class Player : IShortLine
 		if (messages == null) messages = new List<Message>();
 		if (buildings == null) buildings = new List<Building>();
 		if (ships == null) ships = new List<Ship>();
+		if (items == null) items = new List<Item>();
 
 		foreach(var ship in ships){
 			ship.Migrate();
@@ -74,6 +76,50 @@ public class Player : IShortLine
 		currentResearchProgress = 0f;
 		Migrate();
 	}
+
+    /// <summary>
+    /// Adds an item to the inventory. If an item with the same material already exists, merge it by adding amounts.
+    /// </summary>
+    public void AddItem(Material material, int amount)
+    {
+        if (amount <= 0) return; // Don't add zero or negative amounts
+
+        Item? existingItem = items.FirstOrDefault(i => i.Material.uuid == material.uuid);
+        if (existingItem != null)
+        {
+            existingItem.Amount += amount;
+        }
+        else
+        {
+            items.Add(new Item(material, amount));
+        }
+    }
+
+    /// <summary>
+    /// Checks if the player has at least the given amount of a material in inventory.
+    /// </summary>
+    public bool HasMaterial(Material material, int requiredAmount)
+    {
+        Item? item = items.FirstOrDefault(i => i.Material.uuid == material.uuid);
+        return item != null && item.Amount >= requiredAmount;
+    }
+
+    /// <summary>
+    /// Removes a specified amount of a material from the inventory.
+    /// Returns true if successful, false if there was not enough material.
+    /// </summary>
+    public bool RemoveMaterial(Material material, int amount)
+    {
+        Item? item = items.FirstOrDefault(i => i.Material.uuid == material.uuid);
+        if (item == null || item.Amount < amount) return false;
+
+        item.Amount -= amount;
+        if (item.Amount == 0)
+        {
+            items.Remove(item); // Remove empty items from inventory
+        }
+        return true;
+    }
 
 	public void SetContext<T>() where T : Context{
 		Context c = InvokeCommand.allContexts[typeof(T).FullName];

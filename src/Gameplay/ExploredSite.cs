@@ -150,6 +150,8 @@ public class Building : IShortLine {
 	public int level;
 	public string name;
     public string? associatedScheduledTaskUUID;
+	public string leftoverMaterialUUID;
+    public float leftovers;
 
     public string GetName(){
 		return name ?? buildingType.ToString();
