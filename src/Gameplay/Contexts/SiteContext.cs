@@ -87,9 +87,18 @@ public class SiteContext : Context {
 
     private static void Invite(Player p, GameUpdateService game, Player recipient, ExploredSite site)
     {
-        if(p == null) Log.Error("Missing player sending invite.");
-        if(recipient == null) Log.Error("Missing invite recipient.");
-        if(site == null) Log.Error("Missing invite site.");
+        if(p == null){
+            Log.Error("Missing player sending invite.");
+            return;
+        }
+        if(recipient == null){
+            Log.Error("Missing invite recipient.");
+            return;
+        } 
+        if(site == null){
+            Log.Error("Missing invite site.");
+            return;
+        } 
 
         game.Send(p, $"You are inviting {recipient.name} to {site.name}.");
         p.SetCaptivePrompt("If you want to include a message, type it now.",

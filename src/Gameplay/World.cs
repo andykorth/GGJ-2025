@@ -221,10 +221,7 @@ public class World
         return allMats.Find(m => m.uuid == uuid);
     }
 
-
-
 	#endregion
-
 
     /// <summary>
     /// Posts an offer to sell a material.
@@ -242,6 +239,7 @@ public class World
         Offer newOffer = new Offer(seller, material, amount, pricePerUnit);
         offers.Add(newOffer);
 
+		Log.Info($"[{seller.name}] Offer posted: {amount} {material.name} for {pricePerUnit} each.");
         seller.Send($"Offer posted: {amount} {material.name} for {pricePerUnit} each.");
         return true;
     }
@@ -263,6 +261,7 @@ public class World
         Request newRequest = new Request(buyer, material, amount, pricePerUnit);
         requests.Add(newRequest);
 
+		Log.Info($"[{buyer.name}] Request posted: {amount} {material.name} for {pricePerUnit} each.");
         buyer.Send($"Request posted: {amount} {material.name} for {pricePerUnit} each.");
         return true;
     }
@@ -304,105 +303,19 @@ public class World
         offers.RemoveAll(o => fulfilledOffers.Contains(o));
         requests.RemoveAll(r => fulfilledRequests.Contains(r));
     }
-}
 
-public class Offer
-{
-    public Player Seller { get; }
-    public Material Material { get; }
-    public int Amount { get; set; }
-    public int PricePerUnit { get; }
-
-    public Offer(Player seller, Material material, int amount, int pricePerUnit)
+    internal List<Offer> GetOffers()
     {
-        Seller = seller;
-        Material = material;
-        Amount = amount;
-        PricePerUnit = pricePerUnit;
+        return offers;
+    }
+    internal List<Request> GetRequests()
+    {
+        return requests;
+    }
+
+    internal Material? GetMaterialByName(string materialName)
+    {
+        return this.allMats.FirstOrDefault(o => o.name.StartsWith(materialName) );
     }
 }
 
-public class Request
-{
-    public Player Buyer { get; }
-    public Material Material { get; }
-    public int Amount { get; set; }
-    public int PricePerUnit { get; }
-
-    public Request(Player buyer, Material material, int amount, int pricePerUnit)
-    {
-        Buyer = buyer;
-        Material = material;
-        Amount = amount;
-        PricePerUnit = pricePerUnit;
-    }
-}
-
-
-public class OfferJsonConverter : JsonConverter<Offer>
-{
-    public override void WriteJson(JsonWriter writer, Offer value, JsonSerializer serializer)
-    {
-        JObject obj = new JObject
-        {
-            { "sellerUUID", value.Seller.uuid },
-            { "materialUUID", value.Material.uuid },
-            { "amount", value.Amount },
-            { "pricePerUnit", value.PricePerUnit }
-        };
-        obj.WriteTo(writer);
-    }
-
-    public override Offer ReadJson(JsonReader reader, Type objectType, Offer existingValue, bool hasExistingValue, JsonSerializer serializer)
-    {
-        JObject obj = JObject.Load(reader);
-        string sellerUUID = obj["sellerUUID"].ToString();
-        string materialUUID = obj["materialUUID"].ToString();
-        int amount = obj["amount"]?.ToObject<int>() ?? 0;
-        int pricePerUnit = obj["pricePerUnit"]?.ToObject<int>() ?? 0;
-
-        Player? seller = World.instance.GetPlayer(sellerUUID);
-        Material? material = World.instance.GetMaterial(materialUUID);
-
-        if (seller == null || material == null)
-        {
-            throw new JsonSerializationException("Failed to deserialize Offer: Invalid UUID reference.");
-        }
-
-        return new Offer(seller, material, amount, pricePerUnit);
-    }
-}
-
-public class RequestJsonConverter : JsonConverter<Request>
-{
-    public override void WriteJson(JsonWriter writer, Request value, JsonSerializer serializer)
-    {
-        JObject obj = new JObject
-        {
-            { "buyerUUID", value.Buyer.uuid },
-            { "materialUUID", value.Material.uuid },
-            { "amount", value.Amount },
-            { "pricePerUnit", value.PricePerUnit }
-        };
-        obj.WriteTo(writer);
-    }
-
-    public override Request ReadJson(JsonReader reader, Type objectType, Request existingValue, bool hasExistingValue, JsonSerializer serializer)
-    {
-        JObject obj = JObject.Load(reader);
-        string buyerUUID = obj["buyerUUID"].ToString();
-        string materialUUID = obj["materialUUID"].ToString();
-        int amount = obj["amount"]?.ToObject<int>() ?? 0;
-        int pricePerUnit = obj["pricePerUnit"]?.ToObject<int>() ?? 0;
-		
-        Player? buyer = World.instance.GetPlayer(buyerUUID);
-        Material? material = World.instance.GetMaterial(materialUUID);
-
-        if (buyer == null || material == null)
-        {
-            throw new JsonSerializationException("Failed to deserialize Request: Invalid UUID reference.");
-        }
-
-        return new Request(buyer, material, amount, pricePerUnit);
-    }
-}

@@ -49,6 +49,9 @@ public class Player : IShortLine
 		foreach(var ship in ships){
 			ship.Migrate();
 		}
+
+		int invalidRemoved = items.RemoveAll( (item) => item.Material == null);
+		if(invalidRemoved > 0) Log.Error($"Removed {invalidRemoved} invalid items from {this.name} inventory");
 	}
 
 	public Player(string name) : this()

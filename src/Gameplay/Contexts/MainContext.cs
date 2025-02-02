@@ -28,6 +28,23 @@ public class MainContext : Context {
         p.SetContext<ProdContext>();
     }
 
+    [GameCommand("Menu: See the planets you have explored.")]
+    public static void Site(Player p, GameUpdateService game, string args)
+    {
+        p.SetContext<SiteContext>();
+    }
+
+    [GameCommand("Inv: See your inventory, sell items on the exchange.")]
+    public static void Inv(Player p, GameUpdateService game, string args)
+    {
+        p.SetContext<InventoryContext>();
+    }
+
+    [GameCommand("Exchange: View and Buy materials on the exchange.")]
+    public static void Exchange(Player p, GameUpdateService game, string args)
+    {
+        p.SetContext<ExchangeContext>();
+    }
 
     [GameCommand("Chat with all other users.")]
     public static void Say(Player p, GameUpdateService game, string args)
@@ -99,7 +116,7 @@ public class MainContext : Context {
         var sortedPlayers = World.instance.allPlayers.OrderByDescending(p => p.lastActivity);
 
         int start = PullIntArg(p, ref args);
-        
+
         string s = ShowList(sortedPlayers.Cast<IShortLine>().ToList(), "Players", "ship", 20, p, start);
         game.Send(p, s);
     }

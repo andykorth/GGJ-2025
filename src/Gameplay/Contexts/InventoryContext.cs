@@ -27,29 +27,27 @@ public class InventoryContext : Context
     public static void View(Player p, GameUpdateService game, string args)
     {
         Item? item = PullIndexArg<Item>(p, game, ref args, p.items);
-        if (item != null)
-        {
+        if (item != null) {
             string s = item.LongLine();
             game.Send(p, s);
-        }
-        else
-        {
+        } else {
             game.Send(p, "Invalid item.");
         }
     }
 
-    [GameCommand("[salmon]sell 0 100[/salmon] - Post an offer to sell 100 units of item 0.")]
+    [GameCommand("[salmon]sell 0 100 30[/salmon] - Post an offer to sell 100 units of item 0 at $30/u")]
     public static void Sell(Player p, GameUpdateService game, string args)
     {
         Item? item = PullIndexArg<Item>(p, game, ref args, p.items);
         int quantity = PullIntArg(p, ref args);
         int price = PullIntArg(p, ref args);
 
-        if (item != null && quantity > 0 && quantity <= item.Amount)
+        if (item != null && quantity > 0 && quantity <= item.Amount && price > 0)
         {
             p.RemoveMaterial(item.Material, quantity);
-            World.instance.PostOffer(p, item.Material, quantity, price);
-            game.Send(p, $"Posted sell offer for {quantity} {item.Material.name} at {price} credits each.");
+            if(World.instance.PostOffer(p, item.Material, quantity, price)){
+                game.Send(p, $"Posted sell offer for {quantity} {item.Material.name} at {price} credits each.");
+            }
         }
         else
         {
