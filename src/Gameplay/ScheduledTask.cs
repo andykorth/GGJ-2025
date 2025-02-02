@@ -221,15 +221,19 @@ public class ScheduledTask
 		var site = World.instance.GetSite(building.siteUUID);
 		string siteName = Ascii.WrapColor(site!.name, site!.SiteColor());
 
-        Material m = World.instance.allMats.Find(m => m.uuid == this.materialUUID)!;
+        Material m = World.instance.FindMat(this.materialUUID)!;
         float quantity = this.materialAmount;
 
         string s = $"-> Your {building.GetName()} on {siteName} has produced {quantity:0.00} {m.name} \n";
         service.Send(player, s);
 
+        // todo: Add the material UUID and quantity to the player's inventory.
+        player.add
+
         // requeue the task!
         Reschedule();
     }
+
 
 
 

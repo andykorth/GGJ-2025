@@ -78,26 +78,34 @@ public class Player : IShortLine
 	public void SetContext<T>() where T : Context{
 		Context c = InvokeCommand.allContexts[typeof(T).FullName];
         this.currentContext = c;
-        string[] commands = c.Commands.Keys.ToArray();
-
-		var service = World.instance.GetService();
-        service.SendCommandList(this, commands, c.Name );
+		SendCommandList(c);
 
 		Log.Info($"[{name}] swap to context: {currentContext.Name})");
 
-		c.EnterContext(this, service);
+		c.EnterContext(this, World.instance.GetService());
     }
 
-	internal void SetContextTo(Context c)
+    private void SendCommandList(Context c)
     {
-		this.currentContext = c;
-        string[] commands = c.Commands.Keys.ToArray();
+		// wow this trainwreck should be cached.
+		List<string> commands = new();
+		foreach(var x in c.Commands.Keys){
+			if(!c.HelpAttrs[x].normallyHidden){
+				commands.Add(x);
+			}
+		}
 
 		var service = World.instance.GetService();
-        service.SendCommandList(this, commands, c.Name );
+        service.SendCommandList(this, commands.ToArray(), c.Name );
+    }
 
+    internal void SetContextTo(Context c)
+    {
+		this.currentContext = c;
+		SendCommandList(c);
 		Log.Info($"[{name}] set to context: {currentContext.Name})");
 
+		var service = World.instance.GetService();
 		c.EnterContext(this, service);
     }
 

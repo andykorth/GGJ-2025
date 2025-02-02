@@ -203,6 +203,11 @@ public class World
 		return allScheduledActions.Find(x => x.uuid == associatedScheduledTaskUUID)!;
 	}
 
+	public Material? FindMat(string uuid){
+        return allMats.Find(m => m.uuid == uuid);
+    }
+
+
 
 	#endregion
 
