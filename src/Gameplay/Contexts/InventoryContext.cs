@@ -42,16 +42,22 @@ public class InventoryContext : Context
         int quantity = PullIntArg(p, ref args);
         int price = PullIntArg(p, ref args);
 
-        if (item != null && quantity > 0 && quantity <= item.Amount && price > 0)
+        if (item != null && quantity > 0 && price > 0)
         {
-            p.RemoveMaterial(item.Material, quantity);
+            if (!p.HasMaterial(item.Material, quantity))
+            {
+                p.Send($"You do not have enough {item.Material.name}. You have {p.GetMaterialQuantity(item.Material)}. You wanted to sell {quantity}. ");
+                return;
+            }
+
             if(World.instance.PostOffer(p, item.Material, quantity, price)){
                 game.Send(p, $"Posted sell offer for {quantity} {item.Material.name} at {price} credits each.");
             }
         }
         else
         {
-            game.Send(p, "Invalid sale request.");
+            game.Send(p, "Invalid sale request. Syntax is:");
+            Help(p, game, args);
         }
     }
 

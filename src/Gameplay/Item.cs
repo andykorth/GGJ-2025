@@ -31,17 +31,16 @@ public class Offer
 {
     public Offer(){}
 
-
     [JsonIgnore] 
     public Player Seller => World.instance.GetPlayer(sellerUUID);
 
     [JsonIgnore] 
     public Material Material => World.instance.GetMaterial(materialUUID);
 
-    public string sellerUUID { get; private set; }
-    public string materialUUID { get; private set; }
-    public int Amount { get; set; }
-    public int PricePerUnit { get; }
+    public string sellerUUID;
+    public string materialUUID;
+    public int Amount;
+    public int PricePerUnit;
 
     public Offer(Player seller, Material material, int amount, int pricePerUnit)
     {

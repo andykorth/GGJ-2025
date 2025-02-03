@@ -195,7 +195,7 @@ function fillHelpLine() {
 
     var secondPart = currentMatch;
     if(currentMatch == null || currentMatch === ""){
-        secondPart = commands;
+        secondPart = commands.join(", ");
     }
 
     // Create elements for the colored text

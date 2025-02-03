@@ -107,6 +107,12 @@ public class Player : IShortLine
         return item != null && item.Amount >= requiredAmount;
     }
 
+    public int GetMaterialQuantity(Material material)
+    {
+        Item? item = items.FirstOrDefault(i => i.Material.uuid == material.uuid);
+        return item != null ? item.Amount  : 0;
+    }
+
     /// <summary>
     /// Removes a specified amount of a material from the inventory.
     /// Returns true if successful, false if there was not enough material.
@@ -142,6 +148,9 @@ public class Player : IShortLine
 			if(!c.HelpAttrs[x].normallyHidden){
 				commands.Add(x);
 			}
+		}
+		if(!c.rootContext){
+			commands.Add("exit");
 		}
 
 		var service = World.instance.GetService();

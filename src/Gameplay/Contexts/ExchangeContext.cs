@@ -50,7 +50,7 @@ public class ExchangeContext : Context
         ShowRequests(p, game);
     }
 
-    [GameCommand("[salmon]sell 10 Iron Ore 5[/salmon] - Posts an offer to sell 10 Iron Ore for 5 each.")]
+    [GameCommand("[salmon]sell 10 cobalt 5[/salmon] - Posts an offer to sell 10 Cobalt Ore for 5 each. (enter the first couple letters of the mat)")]
     public static void Sell(Player p, GameUpdateService game, string args)
     {
         var (amount, material, price) = ParseTradeArgs(p, game, ref args);
@@ -62,11 +62,22 @@ public class ExchangeContext : Context
         }
     }
 
-    [GameCommand("[salmon]buy 10 Iron Ore 5[/salmon] - Attempts to buy 10 Iron Ore at 5 each.")]
+    [GameCommand("[salmon]buy 10 cobalt 5[/salmon] - Attempts to buy 10 Cobalt Ore at 5 each. (enter the first couple letters of the mat)")]
     public static void Buy(Player p, GameUpdateService game, string args)
     {
         var (amount, material, price) = ParseTradeArgs(p, game, ref args);
         if (material == null) return;
+
+        if(price <= 0){
+            game.Send(p, "[red]Invalid price.[/red]");
+            Help(p, game, "");
+            return;
+        }
+        if(price <= 0){
+            game.Send(p, "[red]Invalid price.[/red]");
+            Help(p, game, "");
+            return;
+        }
 
         List<Offer> matchingOffers = World.instance.GetOffers()
             .Where(o => o.Material.uuid == material.uuid && o.PricePerUnit <= price)

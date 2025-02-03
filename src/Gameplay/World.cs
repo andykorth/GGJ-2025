@@ -1,6 +1,4 @@
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 public enum MatType
 {
@@ -108,6 +106,17 @@ public class World
 		{
 			allMats = new List<Material>();
 		}
+
+
+        int rem = offers.RemoveAll(o => string.IsNullOrEmpty(o.materialUUID));
+		if(rem > 0){
+			Log.Error($"Removed {rem} invalid offers from CX exchange. Missing materialUUID.");
+		}
+		rem = requests.RemoveAll(o => string.IsNullOrEmpty(o.materialUUID));
+		if(rem > 0){
+			Log.Error($"Removed {rem} invalid requests from CX exchange. Missing materialUUID");
+		}
+
 		void AddIfNeeded(string name, float rarity, MatType type)
 		{
 			if (allMats.Find(m => m.name == name) == null)
@@ -193,7 +202,11 @@ public class World
 
 	internal Material? GetMaterial(string matUUID)
 	{
-		return allMats.Find(x => x.uuid == matUUID);
+		var m =  allMats.Find(x => x.uuid == matUUID);
+		if(m == null){
+			Log.Error($"Could not find material with UUID: {matUUID}" );
+		}
+		return m;
 	}
 
 	internal Player? GetPlayerByName(string r)
@@ -231,7 +244,7 @@ public class World
     {
         if (!seller.HasMaterial(material, amount))
         {
-            seller.Send("You do not have enough of this material.");
+            seller.Send($"You do not have enough {material}. You have {seller.GetMaterialQuantity(material)}. You wanted to sell {amount}. ");
             return false;
         }
 
@@ -271,8 +284,6 @@ public class World
     /// </summary>
     public void ProcessTrades()
     {
-        List<Offer> fulfilledOffers = new List<Offer>();
-        List<Request> fulfilledRequests = new List<Request>();
 
         foreach (var request in requests)
         {
@@ -292,16 +303,19 @@ public class World
                 offer.Amount -= tradeAmount;
                 request.Amount -= tradeAmount;
 
-                if (offer.Amount == 0) fulfilledOffers.Add(offer);
-                if (request.Amount == 0) fulfilledRequests.Add(request);
-
                 if (request.Amount == 0) break;
             }
         }
 
         // Remove fulfilled orders
-        offers.RemoveAll(o => fulfilledOffers.Contains(o));
-        requests.RemoveAll(r => fulfilledRequests.Contains(r));
+        offers.RemoveAll(o => o.Amount <= 0);
+        requests.RemoveAll(r => r.Amount <= 0);
+
+		offers = offers.OrderByDescending(x => x.PricePerUnit)
+		.OrderBy(x => x.Material.name).ToList();
+
+		requests = requests.OrderByDescending(x => x.PricePerUnit)
+		.OrderBy(x => x.Material.name).ToList();
     }
 
     internal List<Offer> GetOffers()
@@ -315,7 +329,7 @@ public class World
 
     internal Material? GetMaterialByName(string materialName)
     {
-        return this.allMats.FirstOrDefault(o => o.name.StartsWith(materialName) );
+        return this.allMats.FirstOrDefault(o => o.name.ToLowerInvariant().StartsWith(materialName.ToLowerInvariant()) );
     }
 }
 
