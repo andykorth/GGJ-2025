@@ -108,18 +108,16 @@ public abstract class Context
         return ShowList(list.Cast<IShortLine>().ToList(), "Unresearched Relics", "---", showMax, p, start);
     }
 
-
-    internal static int PullIntArg(Player p, ref string args){
+    internal static int PullIntArg(Player p, ref string args, bool optional = false){
         string indexS = PullArg(ref args);
         int index = -1;
         if(int.TryParse(indexS, out index)){
             return index;
         }else{
-            p.Send( $"You were supposed to provide a number, not [{indexS}]!");
+            if(!optional) p.Send( $"You were supposed to provide a number, not [{indexS}]!");
             return -1;
         }
     }
-
 
     internal static T? PullIndexArg<T>(Player p, GameUpdateService game, ref string args, List<T> list){
         string indexS = PullArg(ref args);

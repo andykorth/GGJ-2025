@@ -13,8 +13,10 @@ public class Material
 	public string inventedByPlayerUUID;
 	public DateTime inventedDate;
 	public float rarity;
+    public List<(string materialUUID, int quantity)> prereqs;
+    public int produced;
 
-	public Material()
+    public Material()
 	{
 		// newtonsoft
 	}
@@ -78,8 +80,8 @@ public class World
 		while (allScheduledActions.Count > 0 && allScheduledActions[0].completedOnTick <= ticks)
 		{
 			var st = allScheduledActions[0];
-			st.InvokeAction(service);
 			allScheduledActions.RemoveAt(0); // Remove the first task from the list
+			st.InvokeAction(service);
 		}
 
 	}
@@ -102,11 +104,9 @@ public class World
 
 	public void Migrate()
 	{
-		if (allMats == null)
-		{
+		if (allMats == null) {
 			allMats = new List<Material>();
 		}
-
 
         int rem = offers.RemoveAll(o => string.IsNullOrEmpty(o.materialUUID));
 		if(rem > 0){
@@ -117,17 +117,36 @@ public class World
 			Log.Error($"Removed {rem} invalid requests from CX exchange. Missing materialUUID");
 		}
 
-		void AddIfNeeded(string name, float rarity, MatType type)
-		{
-			if (allMats.Find(m => m.name == name) == null)
-			{
+		void AddIfNeeded(string name, float rarity, MatType type) {
+			if (allMats.Find(m => m.name == name) == null) {
 				allMats.Add(Material.Create(name, rarity, type));
+			}
+		}
+
+		void AddProductionItemIfNeeded(string name, int produced, List<(string materialUUID, int quantity)> prereqs) {
+			if (allMats.Find(m => m.name == name) == null) {
+				var mat = Material.Create(name, 1.0f, MatType.Production);
+				mat.prereqs = prereqs;
+				mat.produced = produced;
+
+				allMats.Add(mat);
 			}
 		}
 
 		AddIfNeeded("Iron Ore", 10f, MatType.Mining);
 		AddIfNeeded("Cobalt Ore", 1.8f, MatType.Mining);
 		AddIfNeeded("Platinum Group Ore", 0.3f, MatType.Mining);
+		AddIfNeeded("Hydrocarbons", 10f, MatType.Mining);
+
+		var iron = GetMaterialByName("Iron Ore")!;
+		var hydrocarbons = GetMaterialByName("Hydrocarbons")!;
+		AddProductionItemIfNeeded("Metal Furniture", 1, [(iron.uuid, 1)] );
+		AddProductionItemIfNeeded("Polyethelene", 100, [(hydrocarbons.uuid, 1)]);
+
+		var polyethelene = GetMaterialByName("Polyethelene")!;
+		AddProductionItemIfNeeded("Hull Plates", 1, [(iron.uuid, 3), (polyethelene.uuid, 20)]);
+
+
 	}
 
 	public const string FILENAME = "../world.json";
@@ -189,6 +208,9 @@ public class World
 
 	internal void Schedule(ScheduledTask st)
 	{
+		if(allScheduledActions.RemoveAll(x => x.uuid == st.uuid) > 0){
+			Log.Error($"Removed duplicate scheduled task {st.uuid} while rescheduling.");
+		}
 		allScheduledActions.Add(st);
 		// todo could sort less often. could make a heap.
 		allScheduledActions = allScheduledActions.OrderBy((task) => task.completedOnTick).ToList();
