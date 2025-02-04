@@ -30,7 +30,7 @@ public class ProdContext : Context {
         Building? b = PullIndexArg<Building>(p, game, ref args, p.buildings);
         if(b != null){
             string s = "";
-            s += b.LongLine();
+            s += b.LongLine(p);
             game.Send(p, s);
         }
     }    
@@ -57,7 +57,7 @@ public class BuildingContext : Context {
     {
         Building building = (Building) p.ContextContext;
         p.Send($"[yellow]{Name} Menu:[/yellow]");
-        string s= building.LongLine();
+        string s= building.LongLine(p);
 
         game.Send(p, s);
     }
@@ -69,7 +69,7 @@ public class BuildingContext : Context {
 
         string oldName = b.GetName();
         b.name = args;
-        game.Send(p, $"Building {oldName} renamed to {args}");
+        game.Send(p, $"Building '{oldName}' renamed to '{args}'.");
     }   
 
     [GameCommand("Destroy this building (you can reuse the slot).")]
@@ -84,19 +84,22 @@ public class BuildingContext : Context {
     public static void Start(Player p, GameUpdateService game, string args)
     {
         Building b = (Building) p.ContextContext;
-        int index;
-        string indexS = PullArg(ref args);
-        if(int.TryParse(indexS, out index)){
+        int index = PullIntArg(p, ref args);
+        if(index >= 0){
             b.StartProd(p, game, b, index);
-        }else{
-            game.Send(p, $"Bad index {indexS}!");
         }
-    }       
+    }
 
     [GameCommand("Stop production on current product")]
     public static void Stop(Player p, GameUpdateService game, string args)
     {
-        game.Send(p, $"not done!");
+        Building b = (Building) p.ContextContext;
+        b.StopProd(p, game, b);
     }
 
+    [GameCommand("Go back to the Prod menu.")]
+    public static void Back(Player p, GameUpdateService game, string args)
+    {
+        p.SetContext<ProdContext>();
+    }
 }

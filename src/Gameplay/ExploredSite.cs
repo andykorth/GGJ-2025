@@ -36,33 +36,37 @@ public class ExploredSite : IShortLine {
 		this.planetClass = planetClass;
     }
 
+	public string ColoredName()
+    {
+        return Ascii.WrapColor(this.name, this.SiteColor());
+    }
+
 	public string ClassString(){
 		return GoldilocksClass() ? "Goldilocks Class" : (StandardClass() ? "Habitable" : "Uninhabitable");
 	}
 
 	public string SiteColor(){
-		if(population <= 0){
-			return "grey";
-		}
-		if(population > 0){
-			return "white";
-		}
-		if(population > 12){
-			return "cyan";
-		}
-		if(population > 30){
-			return "orchid";
-		}
-		if(population > 60){
-			return "yellow";
+		
+		if(population > 150){
+			return "RebeccaPurple";
 		}
 		if(population > 100){
 			return "chartreuse";
 		}
-		if(population > 150){
-			return "RebeccaPurple";
+		if(population > 60){
+			return "yellow";
 		}
-		return "red";
+		if(population > 30){
+			return "orchid";
+		}
+		if(population > 12){
+			return "cyan";
+		}
+		if(population > 0){
+			return "white";
+		}
+		return "grey";
+		
 	}
 
     string IShortLine.ShortLine(Player p, int index)
@@ -134,4 +138,5 @@ public class ExploredSite : IShortLine {
 		}
 		return matFreq;
     }
+
 }

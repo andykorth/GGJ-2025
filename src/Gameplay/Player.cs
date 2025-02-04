@@ -13,7 +13,7 @@ public class Player : IShortLine
 
 	public List<string> exploredSiteUUIDs;
 	public List<Ship> ships;
-	internal List<int> relicIDs;
+	public List<int> relicIDs;
 	public DateTime lastActivity;
 	public DateTime created;
 	public List<Message> messages;
@@ -378,7 +378,7 @@ public class Message : IShortLine
 
 	public enum MessageType
 	{
-		TextMail, Invitation,
+		TextMail, Invitation, ResearchInvitation,
 	}
 
 	public Message()
@@ -402,7 +402,7 @@ public class Message : IShortLine
 		string status = this.read.HasValue ? "<read>" : "[cyan]<unread>[/cyan]";
 		string from = World.instance.GetPlayer(this.fromPlayerUUID)!.name;
 		// Display the message details
-		return $"[{Ascii.TimeAgo(now - this.sent)}] {status} - {this.type} from {from}: {Ascii.Shorten(this.contents, 20)}";
+		return $"  {index})    [{Ascii.TimeAgo(now - this.sent)}] {status} - {this.type} from {from}: {Ascii.Shorten(this.contents, 20)}";
 
     }
 }

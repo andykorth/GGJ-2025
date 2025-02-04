@@ -76,7 +76,7 @@ public class Building : IShortLine {
 		var site = World.instance.GetSite(this.siteUUID);
 		string productionMessage = GetProdMessage();
 		string showIndex = index < 0 ? "" : index + ")";
-		return $"   {showIndex} {developmentIcon} {GetName(),-20} {Ascii.WrapColor(site!.name, site!.SiteColor()), -20} {productionMessage}\n";
+		return $"   {showIndex} {developmentIcon} {GetName(),-20} {site!.ColoredName(), -20} {productionMessage}\n";
     }
 
 	public string GetProdMessage(){
@@ -96,10 +96,10 @@ public class Building : IShortLine {
 
 	}
 
-	internal string LongLine()
+	internal string LongLine(Player p)
 	{
 		var site = World.instance.GetSite(this.siteUUID);
-		string siteName = Ascii.WrapColor(site!.name, site!.SiteColor());
+		string siteName = site!.ColoredName();
 		string productionMessage = GetProdMessage();
 
 		string s = "";
@@ -117,13 +117,26 @@ public class Building : IShortLine {
 				count += 1;
 			}
 		}
+		else if (buildingType == BuildingType.Retail)
+        {
+            var retailGoods = p.items
+                .Where(item => item.Material.type == MatType.RetailGoods)
+                .Select(item => (mat: item.Material, quantity: item.Amount))
+                .ToList();
+			s += "\nAvailable Retail Goods To Sell:\n";
+			int count = 0;
+			foreach (var pair in retailGoods)
+			{
+				s += $"   {count}) {pair.mat.name,-20} {pair.quantity}x at ${pair.mat.baseCost:0.00}/u\n";
+				count += 1;
+			}
+        }
 		else if (buildingType == BuildingType.Factory)
 		{
 			s += "\nProduction Options:\n";
 			var player = World.instance.GetPlayer(this.ownerPlayerUUID)!;
 
-			var productionMaterials = World.instance.allMats
-				.Where(m => m.type == MatType.Production);
+			var productionMaterials = World.instance.FactoryMaterials();
 
 			int count = 0;
 			foreach (var material in productionMaterials)
@@ -140,7 +153,7 @@ public class Building : IShortLine {
 					Material prereqMaterial = World.instance.FindMat(materialUUID)!;
 					int playerQuantity = player.GetMaterialQuantity(prereqMaterial);
 
-					s += $"   - {prereqMaterial.name}: {playerQuantity}/{requiredQuantity}\n";
+					s += $"     - {prereqMaterial.name}: {playerQuantity}/{requiredQuantity}\n";
 				}
 				count += 1;
 			}
@@ -149,10 +162,27 @@ public class Building : IShortLine {
 		return s;
 	}
 
+    internal void StopProd(Player p, GameUpdateService game, Building b)
+    {
+        World.instance.StopSchedule(b.associatedScheduledTaskUUID);
+
+        string msg = $"{b.GetName()} on {b.GetSite().ColoredName()} has stopped work.";
+
+        game.Send(p, Ascii.Box(msg, "blue"));
+
+        b.associatedScheduledTaskUUID = null;
+        b.isHalted = false; // it's not halted, it's just stopped. Halting means something bad stoppped it
+    }
+
+    private ExploredSite GetSite()
+    {
+        return World.instance.GetSite(this.siteUUID);
+    }
+
     internal void StartProd(Player p, GameUpdateService game, Building b, int index)
     {
-		var site = World.instance.GetSite(this.siteUUID);
-		string siteName = Ascii.WrapColor(site!.name, site!.SiteColor());
+		var site = World.instance.GetSite(this.siteUUID)!;
+		string siteName = site.ColoredName();
 		if(buildingType == BuildingType.Mine){
 
 			var ores = site.GetOres();
@@ -162,17 +192,48 @@ public class Building : IShortLine {
 			}
 
 			(var mat, float freq) =  ores[index];
-			string s = $"Start to mine {mat.name} in {b.GetName()} on {siteName}\n";
+			string msg = $"Start to mine {mat.name} in {b.GetName()} on {siteName}\n";
+            msg += $"Each hour, this will produce {freq:0.00} units of {mat.name}.";
 
-            Schedule(p, game, b, mat, s, freq);			
-		}
+            Schedule(p, game, b, mat, msg, freq);	
+
+        }
+        else if (buildingType == BuildingType.Retail)
+        {
+            // Get all retail goods from the player's inventory
+            var retailGoods = p.items
+                .Where(item => item.Material.type == MatType.RetailGoods)
+                .Select(item => (mat: item.Material, quantity: item.Amount))
+                .ToList();
+
+            if (index < 0 || index >= retailGoods.Count)
+            {
+                game.Send(p, "[red]Invalid selection![/red]");
+                return;
+            }
+
+            var (selectedMaterial, quantity) = retailGoods[index];
+
+            // Ensure there's stock to sell
+            if (quantity <= 0)
+            {
+                game.Send(p, $"[red]You have no {selectedMaterial.name} to sell![/red]");
+                return;
+            }
+
+            float amountProduced = b.GetSite().population / 10.0f;
+            float revenue = selectedMaterial.baseCost;
+            string msg = $"Started selling {selectedMaterial.name} in {b.GetName()} on {siteName}.\n";
+            msg += $"Each hour, this will sell {amountProduced:0.00} units of {selectedMaterial.name} for ${selectedMaterial.baseCost} each.";
+
+            Schedule(p, game, b, selectedMaterial, msg, amountProduced);
+        }
 		else if (buildingType == BuildingType.Factory)
         {
             // Get list of production materials
-            var productionMaterials = World.instance.allMats
-                .Where(m => m.type == MatType.Production).ToList();
+            var productionMaterials = World.instance.FactoryMaterials();
 
-            if (index < 0 || index >= productionMaterials.Count)
+            if (index < 0 || index >= productionMaterials.Count() )
             {
                 game.Send(p, "[red]Invalid selection![/red]");
                 return;
@@ -188,18 +249,24 @@ public class Building : IShortLine {
 
                 if (playerQuantity < requiredQuantity)
                 {
-                    string s = $"Production cannot start: Not enough {prereqMaterial.name}!\n";
+                    string s = $"Production cannot start {selectedMaterial.name}: Not enough {prereqMaterial.name}!\n";
                     game.Send(p, Ascii.Box(s, "red"));
                     return;
                 }
             }
+            string msg = $"Started producing {selectedMaterial.name} in {b.GetName()} on {siteName}.\n";
+            msg += $"Each hour, this will produce {selectedMaterial.produced:0.00} units of {selectedMaterial.name}.";
 
-            string successMessage = $"Started producing {selectedMaterial.name} in {b.GetName()} on {siteName}.\n";
-            Schedule(p, game, b, selectedMaterial, successMessage, selectedMaterial.produced);
+            Schedule(p, game, b, selectedMaterial, msg, selectedMaterial.produced);
         }
 
-        static void Schedule(Player p, GameUpdateService game, Building b, Material mat, string s, float amountProduced)
+        static void Schedule(Player p, GameUpdateService game, Building b, Material mat, string msg, float amountProduced)
         {
+
+            if(b.associatedScheduledTaskUUID != null){
+                World.instance.StopSchedule(b.associatedScheduledTaskUUID);
+            }
+
             // Schedule the production task
             int duration = 60 * 60 / World.instance.timescale;
             ScheduledTask st = new ScheduledTask(duration, p, b, ScheduledAction.Production);
@@ -207,13 +274,13 @@ public class Building : IShortLine {
             st.materialAmount = amountProduced;
             World.instance.Schedule(st);
 
-            s += $"Each hour, this will produce {mat.produced:0.00} units of {mat.name}.";
 
-            game.Send(p, Ascii.Box(s, "green"));
+            game.Send(p, Ascii.Box(msg, "green"));
 
             b.associatedScheduledTaskUUID = st.uuid;
             b.isHalted = false; // Ensure the building is marked as active
         }
 
     }
+
 }

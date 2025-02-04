@@ -10,39 +10,27 @@ public class SiteContext : Context {
         game.Send(p, s);
     }
 
-    [GameCommand("list - list the ships again.")]
+    [GameCommand("list - list the sites again.")]
     public static void List(Player p, GameUpdateService game, string args)
     {
-        int index;
-        string indexS = PullArg(ref args);
-        if(int.TryParse(indexS, out index)){
-            string s= MainContext.ShowSites(20, p, 0);
-            game.Send(p, s);
-        }else{
-            game.Send(p, $"Bad index for site viewing [{indexS}]");
-        }
+        int start = PullIntArg(p, ref args, true);
+        string s= MainContext.ShowSites(20, p, start);
+        game.Send(p, s);
     }
 
-
-    [GameCommand("invite 0 - Invite another player to join you on your site.")]
+    [GameCommand("View 0 - View a planet's details.")]
     public static void View(Player p, GameUpdateService game, string args)
     {
-        int index;
-        string indexS = PullArg(ref args);
-        if(int.TryParse(indexS, out index)){
-            ExploredSite site = p.GetExploredSites()[index];
-
+        ExploredSite? site = PullIndexArg<ExploredSite>(p, game, ref args, p.GetExploredSites() );
+        if(site != null){
             game.Send(p, Ascii.Header(site.name, 40, site.SiteColor()));
             game.Send(p, ((IShortLine)site).ShortLine(p, -1));
             game.Send(p, site.LongLine(p));
-
-        }else{
-            game.Send(p, $"Bad index for site viewing [{indexS}]");
         }
     }
 
-
-    private static void Invite(Player p, GameUpdateService game, string args)
+    [GameCommand("invite 0 - Invite another player to join you on your site.")]
+    public static void Invite(Player p, GameUpdateService game, string args)
     {
         int index;
         string indexS = PullArg(ref args);
@@ -174,7 +162,7 @@ public class SiteContext : Context {
                     s += "\n";
                 }
                 game.Send(p, s);
-                p.SetCaptivePrompt($"Which do you want to build: [salmon]0-{choiceCount}[/salmon] (or [salmon]cancel[/salmon])",
+                p.SetCaptivePrompt($"Which do you want to build: [salmon]0-{choiceCount-1}[/salmon] (or [salmon]cancel[/salmon])",
                     (string response) => {
                         string r = response.ToLower();
                         int index = -1;

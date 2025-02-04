@@ -1,5 +1,6 @@
 
 
+
 public enum MatType
 {
 	Production, RetailGoods, Services, Mining, Agricultural, Aquaculture, Salvage
@@ -15,6 +16,7 @@ public class Material
 	public float rarity;
     public List<(string materialUUID, int quantity)> prereqs;
     public int produced;
+    public float baseCost;
 
     public Material()
 	{
@@ -69,8 +71,7 @@ public class World
 
 	public void UpdateInstance()
 	{
-		if (ticks % 10 == 0)
-		{
+		if (ticks % 10 == 0) {
 			SaveWorld();
 		}
 
@@ -146,6 +147,9 @@ public class World
 		var polyethelene = GetMaterialByName("Polyethelene")!;
 		AddProductionItemIfNeeded("Hull Plates", 1, [(iron.uuid, 3), (polyethelene.uuid, 20)]);
 
+		var metalFurniture = GetMaterialByName("Metal Furniture")!;
+		metalFurniture.baseCost = 10;
+		metalFurniture.type = MatType.RetailGoods;
 
 	}
 
@@ -206,15 +210,6 @@ public class World
 		return allShipDesigns.Find(x => x.name == name)!;
 	}
 
-	internal void Schedule(ScheduledTask st)
-	{
-		if(allScheduledActions.RemoveAll(x => x.uuid == st.uuid) > 0){
-			Log.Error($"Removed duplicate scheduled task {st.uuid} while rescheduling.");
-		}
-		allScheduledActions.Add(st);
-		// todo could sort less often. could make a heap.
-		allScheduledActions = allScheduledActions.OrderBy((task) => task.completedOnTick).ToList();
-	}
 
 	internal Player? GetPlayer(string playerUUID)
 	{
@@ -352,6 +347,29 @@ public class World
     internal Material? GetMaterialByName(string materialName)
     {
         return this.allMats.FirstOrDefault(o => o.name.ToLowerInvariant().StartsWith(materialName.ToLowerInvariant()) );
+    }
+
+	internal void Schedule(ScheduledTask st)
+	{
+		if(allScheduledActions.RemoveAll(x => x.uuid == st.uuid) > 0){
+			Log.Error($"Removed duplicate scheduled task {st.uuid} while rescheduling.");
+		}
+		allScheduledActions.Add(st);
+		// todo could sort less often. could make a heap.
+		allScheduledActions = allScheduledActions.OrderBy((task) => task.completedOnTick).ToList();
+	}
+
+    internal void StopSchedule(string? associatedScheduledTaskUUID)
+    {
+		if(allScheduledActions.RemoveAll(x => x.uuid == associatedScheduledTaskUUID) <= 0){
+			Log.Error($"Attempted to remove scheduled item {associatedScheduledTaskUUID}, but it was not found.");
+		}
+    }
+
+    internal List<Material> FactoryMaterials()
+    {
+        return this.allMats
+				.Where(m => m.type == MatType.Production || m.type == MatType.RetailGoods).ToList();
     }
 }
 

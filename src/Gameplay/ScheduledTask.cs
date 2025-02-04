@@ -248,24 +248,44 @@ public class ScheduledTask
 
         float quantityProduced = m.type == MatType.Production ? m.produced : this.materialAmount;
 
-        Log.Info($"{player} {building.GetName()} on {siteName} produced {quantityProduced:0.00} {m.name}");
+        if(building.buildingType == BuildingType.Retail){
+            int amountSold = (int) this.materialAmount;
+            float soldPerUnit = m.baseCost;
 
-        string productionMessage = $"-> Your {building.GetName()} on {siteName} has produced {quantityProduced:0.00} {m.name} \n";
+            if (!player.HasMaterial(m, amountSold))
+            {
+                string haltMessage = $"-> Your {building.GetName()} on {siteName} has no more {m.name} to sell, and is halted.\n";
+                Log.Info($"{player} {haltMessage}");
+                service.Send(player, haltMessage);
+                building.isHalted = true; // Mark building as halted
+                return;
+            }
 
-        service.Send(player, productionMessage);
+            Log.Info($"[{player.name}] Retail: {building.GetName()} on {site!.name} sold {amountSold} {m.name} for ${soldPerUnit}/u");
+            string productionMessage = $"-> Your {building.GetName()} on {site!.name} sold {amountSold} {m.name} for ${soldPerUnit}/u \n";
+            service.Send(player, productionMessage);
 
-        if (building.leftoverMaterialUUID == this.materialUUID) {
-            quantityProduced += building.leftovers;
-        } else {
-            building.leftovers = 0f;
+            player.RemoveMaterial(m, amountSold);
+        }else{
+            Log.Info($"[{player.name}] {building.GetName()} on {site!.name} produced {quantityProduced:0.00} {m.name}");
+
+            string productionMessage = $"-> Your {building.GetName()} on {siteName} has produced {quantityProduced:0.00} {m.name} \n";
+
+            service.Send(player, productionMessage);
+
+            if (building.leftoverMaterialUUID == this.materialUUID) {
+                quantityProduced += building.leftovers;
+            } else {
+                building.leftovers = 0f;
+            }
+
+            int intQuantity = (int)quantityProduced;
+            float leftovers = quantityProduced - intQuantity;
+            building.leftovers = leftovers;
+            building.leftoverMaterialUUID = this.materialUUID;
+
+            player.AddItem(m, intQuantity);
         }
-
-        int intQuantity = (int)quantityProduced;
-        float leftovers = quantityProduced - intQuantity;
-        building.leftovers = leftovers;
-        building.leftoverMaterialUUID = this.materialUUID;
-
-        player.AddItem(m, intQuantity);
 
         // Requeue the task
         Reschedule();

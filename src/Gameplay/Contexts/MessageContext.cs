@@ -5,14 +5,19 @@ public class MessageContext : Context {
     
     public override void EnterContext(Player p, GameUpdateService game)
     {
+        List(p, game, "");
+    }
+
+    [GameCommand("List all messages")]
+    public static void List(Player p, GameUpdateService game, string args)
+    {
         // Sort messages: most recent sent date first, unread messages first
         var sortedMessages = p.messages
             .OrderByDescending(m => m.sent)
             .ThenBy(m => m.read.HasValue);
 
-        var list = sortedMessages;
-        string s = Context.ShowList(list.Cast<IShortLine>().ToList(), "Messages", "message", 20, p, 0);
-
+        string s = Ascii.Header("Messages", 40, "yellow");
+        s += Context.ShowList(sortedMessages.Cast<IShortLine>().ToList(), "Messages", "message", 20, p, 0);
         game.Send(p, s);
     }
 

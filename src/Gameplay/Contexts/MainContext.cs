@@ -46,6 +46,12 @@ public class MainContext : Context {
         p.SetContext<ExchangeContext>();
     }
 
+    [GameCommand("HQ: View and upgrade your headquarters, perform research.")]
+    public static void HQ(Player p, GameUpdateService game, string args)
+    {
+        p.SetContext<HQContext>();
+    }
+
     [GameCommand("Chat with all other users.")]
     public static void Say(Player p, GameUpdateService game, string args)
     {

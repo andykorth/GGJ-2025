@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.SignalR;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -11,6 +13,19 @@ builder.Services.AddHostedService<GameUpdateService>();
 var app = builder.Build();
 app.Urls.Add("http://*:3000");
 
+// Hook into application shutdown event
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+
+lifetime.ApplicationStopping.Register(() =>
+{
+    Console.WriteLine("Server is shutting down...");
+
+    // Notify connected clients via SignalR
+    var hubContext = app.Services.GetRequiredService<IHubContext<GameHub>>();
+    hubContext.Clients.All.SendAsync("ReceiveShutdownMessage", "Server is shutting down...").Wait();
+});
+
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -21,9 +36,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthorization();
 
 app.MapRazorPages();
