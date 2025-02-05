@@ -13,7 +13,7 @@ public class ProdContext : Context {
     private static string ShowProdBuildings(int showMax, Player p, int start)
     {
         var list = p.buildings;
-        return Context.ShowList(list.Cast<IShortLine>().ToList(), "Production Buildings", "prod", showMax, p, start);
+        return Context.ShowList(list.Cast<IShortLine>().ToList(), "Production Buildings", "prod", showMax, p, start, 60);
     }
 
     [GameCommand("List all buildings again.")]

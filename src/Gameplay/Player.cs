@@ -20,9 +20,6 @@ public class Player : IShortLine
 	public List<Building> buildings;
 	public List<Item> items;
 
-	public string? currentResearch;
-	public float currentResearchProgress;
-
 	[NonSerialized]
 	internal ISingleClientProxy client;
 	[NonSerialized]
@@ -31,7 +28,12 @@ public class Player : IShortLine
 	[NonSerialized]
 	public Context currentContext;
 	[NonSerialized]
-    public object ContextContext;
+    public object ContextContext; // what the currentContext is pointing at
+    public int fleetCommandOffice;
+    public int adminOffice;
+    public int logisticsOffice;
+    public int commerceBureauOffice;
+    public int researchOffice;
 
     public Player()
 	{
@@ -52,6 +54,13 @@ public class Player : IShortLine
 
 		int invalidRemoved = items.RemoveAll( (item) => item.Material == null);
 		if(invalidRemoved > 0) Log.Error($"Removed {invalidRemoved} invalid items from {this.name} inventory");
+
+		
+	    fleetCommandOffice = Math.Max(1, fleetCommandOffice);
+        adminOffice = Math.Max(1, adminOffice);
+        logisticsOffice = Math.Max(1, logisticsOffice);
+        commerceBureauOffice = Math.Max(1, commerceBureauOffice);
+        researchOffice = Math.Max(1, researchOffice);
 	}
 
 	public Player(string name) : this()
@@ -75,8 +84,6 @@ public class Player : IShortLine
 		s.Init(World.instance.GetShipDesign("Pioneer"));
 		ships.Add(s);
 
-		currentResearch = null;
-		currentResearchProgress = 0f;
 		Migrate();
 	}
 
@@ -130,15 +137,6 @@ public class Player : IShortLine
         return true;
     }
 
-	public void SetContext<T>() where T : Context{
-		Context c = InvokeCommand.allContexts[typeof(T).FullName];
-        this.currentContext = c;
-		SendCommandList(c);
-
-		Log.Info($"[{name}] swap to context: {currentContext.Name})");
-
-		c.EnterContext(this, World.instance.GetService());
-    }
 
     private void SendCommandList(Context c)
     {
@@ -157,24 +155,27 @@ public class Player : IShortLine
         service.SendCommandList(this, commands.ToArray(), c.Name );
     }
 
-    internal void SetContextTo(Context c)
+	public void SetContext<T>() where T : Context{
+		Context c = InvokeCommand.allContexts[typeof(T).FullName];
+		SetContextTo(c);
+    }
+
+    public void SetContextTo(Context c)
     {
 		this.currentContext = c;
 		SendCommandList(c);
-		Log.Info($"[{name}] set to context: {currentContext.Name})");
+		Log.Info($"[{name}] set to context: {currentContext.Name} [{currentContext.GetType()}]");
 
-		var service = World.instance.GetService();
-		c.EnterContext(this, service);
+		c.EnterContext(this, World.instance.GetService());
     }
 
-	
-    internal void SetCaptivePrompt(string message, Func<string, bool> promptFunc)
+    internal void SetCaptivePrompt(string message, Func<string, bool> promptFunc, bool backToMain = false)
     {
         CaptiveContext c = new()
         {
             captivePrompt = promptFunc,
             captivePromptMsg = message,
-            previousContext = currentContext
+            previousContext = backToMain ? InvokeCommand.allContexts[typeof(MainContext).FullName] : this.currentContext
         };
 
         SetContextTo(c);
@@ -257,6 +258,12 @@ public class Player : IShortLine
 		currentContext.Invoke(this, game, command, args);
     }
 
+    internal List<ResearchProject> GetResearchProjects()
+    {
+		var list = World.instance.allResearch.Where(r => r.leaderPlayer == this || r.partnerPlayer == this).ToList();
+
+		return list;
+    }
 }
 
 public class Relic : IShortLine
@@ -272,6 +279,56 @@ public class Relic : IShortLine
 	public string GetName(){
 		return Ascii.relicNames[id];
 	}
+}
+
+public class ResearchProject : IShortLine{
+	
+	public string uuid;
+	public string? researchMaterialUUID;
+	public string leaderPlayerUUID;
+	public string partnerPlayerUUID;
+	public DateTime researchStartTime;
+	public int researchCost;
+	public string relicName;
+
+	public ResearchProject(){}
+
+	[JsonIgnore]
+	public Material researchedMaterial{
+		set{
+			researchMaterialUUID = value.uuid;
+		}
+		get {
+			return World.instance.GetMaterial(researchMaterialUUID)!;
+		}
+	}
+
+	[JsonIgnore]
+	public Player partnerPlayer{
+		set{
+			partnerPlayerUUID = value.uuid;
+		}
+		get {
+			return World.instance.GetPlayer(partnerPlayerUUID)!;
+		}
+	}
+
+	[JsonIgnore]
+	public Player leaderPlayer{
+		set{
+			leaderPlayerUUID = value.uuid;
+		}
+		get {
+			return World.instance.GetPlayer(leaderPlayerUUID)!;
+		}
+	}
+
+	public string ShortLine(Player p, int index = -1)
+	{
+		string showIndex = index < 0 ? "" : index + ")";
+		return $"   {showIndex} [cyan]{researchedMaterial.name,-20}[/cyan] {(p == leaderPlayer? "Leader" : "Partner" ),-15} {World.RESEARCH_BOOST*100:0.00}% Boost   {researchStartTime}\n";
+	}
+
 }
 
 public class Ship : IShortLine
@@ -402,7 +459,7 @@ public class Message : IShortLine
 		string status = this.read.HasValue ? "<read>" : "[cyan]<unread>[/cyan]";
 		string from = World.instance.GetPlayer(this.fromPlayerUUID)!.name;
 		// Display the message details
-		return $"  {index})    [{Ascii.TimeAgo(now - this.sent)}] {status} - {this.type} from {from}: {Ascii.Shorten(this.contents, 20)}";
+		return $"  {index})    [{Ascii.TimeAgo(now - this.sent)}] {status} - [yellow]{this.type}[/yellow] from {from}: {Ascii.Shorten(this.contents, 20)}\n";
 
     }
 }

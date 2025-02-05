@@ -108,6 +108,12 @@ public abstract class Context
         return ShowList(list.Cast<IShortLine>().ToList(), "Unresearched Relics", "---", showMax, p, start);
     }
 
+    internal static string ShowResearchBoosts(int showMax, Player p, int start)
+    {
+        var list = p.GetResearchProjects();
+        return ShowList(list.Cast<IShortLine>().ToList(), "Research Boosts", "---", showMax, p, start);
+    }
+
     internal static int PullIntArg(Player p, ref string args, bool optional = false){
         string indexS = PullArg(ref args);
         int index = -1;

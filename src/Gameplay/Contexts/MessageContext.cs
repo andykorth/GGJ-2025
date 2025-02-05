@@ -8,56 +8,113 @@ public class MessageContext : Context {
         List(p, game, "");
     }
 
+
     [GameCommand("List all messages")]
     public static void List(Player p, GameUpdateService game, string args)
     {
         // Sort messages: most recent sent date first, unread messages first
-        var sortedMessages = p.messages
-            .OrderByDescending(m => m.sent)
-            .ThenBy(m => m.read.HasValue);
+        List<Message> sortedMessages = SortedMessages(p);
 
         string s = Ascii.Header("Messages", 40, "yellow");
         s += Context.ShowList(sortedMessages.Cast<IShortLine>().ToList(), "Messages", "message", 20, p, 0);
         game.Send(p, s);
     }
 
+    private static List<Message> SortedMessages(Player p)
+    {
+        return p.messages
+            .OrderByDescending(m => m.sent)
+            .ThenBy(m => m.read.HasValue).ToList();
+    }
+
     [GameCommand("view 0: View the contents of the message")]
     public static void View(Player p, GameUpdateService game, string args)
     {
-        int index;
-        string indexS = PullArg(ref args);
-        if(int.TryParse(indexS, out index)){
-            Message message = p.messages[index];
+        List<Message> sortedMessages = SortedMessages(p);
+        var message = PullIndexArg(p, game, ref args, sortedMessages);
+        if(message != null){
             message.read = DateTime.Now;
 
-            string from = World.instance.GetPlayer(message.fromPlayerUUID)!.name;
+            var from = World.instance.GetPlayer(message.fromPlayerUUID)!;
             // Display the message details
             string s =  "";
             DateTime now = DateTime.Now;
-            s += $"[{Ascii.TimeAgo(now - message.sent)}] - {message.type} from {from}\n   {Ascii.Box(message.contents)}\n";
-            if(message.type == global::Message.MessageType.Invitation){
-                var site = World.instance.GetSite(message.invitationSiteUUID!);
-                s += $"[cyan]The message contains an Site Invitation to join {from} on {site!.name}:[/cyan]\n \n";
-                s += ((IShortLine)site).ShortLine(p, -1);
-                // s += site.LongLine();
-                if(p.GetExploredSites().Contains(site)){
-                    s += $"\n[red]But you are already on that planet![/red]\n";
-                    game.Send(p, s);
-                }else{
-                    game.Send(p, s);
-                    p.SetCaptiveYNPrompt( $"Do you want to join {from} on {site!.name}? (y/n)", (bool response) => {
-                    if(response){
-                        p.exploredSiteUUIDs.Add(site.uuid);
-                        game.Send(p, $"{site!.name} added to your site list!");
-                    } else
-                        game.Send(p, "You can reconsider later!");
-                });
-                }
+            s += $"[{Ascii.TimeAgo(now - message.sent)}] - {message.type} from {from.name}\n\n`{message.contents}`\n";
+            if(message.type == global::Message.MessageType.Invitation) {
+                AcceptInvitation(p, game, message, from, s);
+            }else 
+            if(message.type == global::Message.MessageType.ResearchInvitation) {
+                AcceptResearchInvitation(p, game, message, from, s);
             }
 
-        }else{
-            game.Send(p, $"Bad index for message viewing [{indexS}]");
         }
+    }
+
+    private static void AcceptInvitation(Player p, GameUpdateService game, Message message, Player from, string s)
+    {
+        var site = World.instance.GetSite(message.invitationSiteUUID!);
+        s += $"[cyan]The message contains a Site Invitation to join {from.name} on {site!.name}:[/cyan]\n";
+        s += ((IShortLine)site).ShortLine(p, -1);
+        // s += site.LongLine();
+        if (p.GetExploredSites().Contains(site))
+        {
+            s += $"\n[red]However, you are already on that planet![/red]\n";
+            game.Send(p, Ascii.Box(s));
+        }
+        else
+        {
+            game.Send(p, Ascii.Box(s));
+            p.SetCaptiveYNPrompt($"Do you want to join {from.name} on {site!.name}? (y/n)", (bool response) =>
+            {
+                if (response)
+                {
+                    p.exploredSiteUUIDs.Add(site.uuid);
+                    game.Send(p, $"{site!.name} added to your site list!");
+                }
+                else
+                    game.Send(p, "You can reconsider later!");
+            });
+        }
+    }
+
+    private static void AcceptResearchInvitation(Player p, GameUpdateService game, Message message, Player from, string s)
+    {
+        var relicID = message.invitationSiteUUID;
+        var relicName = Ascii.relicNames[int.Parse(relicID)];
+        s += $"This message contains a Research Invitation from {from.name} to study their [cyan]{relicName}[/cyan].\n \n";
+        s += $"You can join this project at no cost and will recieve access to the boost unlocked when this research is complete.\n";
+        s += $"You only join one research project with {from.name} as the leader, but you can later lead a research project you propose to {from}.\n";
+
+        game.Send(p, Ascii.Box(s));
+
+        p.SetCaptiveYNPrompt($"Do you want to join {from.name} in their research project? (y/n)", (bool response) =>
+        {
+            if (response)
+            {
+                ResearchProject toSender = new ResearchProject();
+                toSender.leaderPlayer = from;
+                toSender.partnerPlayer = p;
+                toSender.researchMaterialUUID = null;
+                toSender.researchStartTime = DateTime.Now;
+                toSender.researchCost = 0;
+                toSender.relicName = relicName;
+
+                string s2 = $"A new research project lead by {from.name} has begun!\nThey are assisted by {p.name}. Together they are\nstudying a [cyan]{relicName}[/cyan]!\n \n";
+
+                string[] researchEndings = {
+                    "Scientists throughout the galaxy expect wonderous advancements to result!",
+                    "The halls of academia buzz with anticipation—what secrets will this relic unveil?",
+                    "Hope and curiosity fuel their work, as the galaxy watches with bated breath.",
+                    "This collaboration may reshape the future of science as we know it!",
+                    "Historians whisper that this could be the greatest discovery of our time."
+                };
+
+                s2 += researchEndings[new Random().Next(researchEndings.Length)];
+                game.SendAll(Ascii.Box(s2, "hotpink"));
+            }
+            else
+                game.Send(p, "You can reconsider later!");
+        });
     }
 
     [GameCommand("send: Send a text message to someone.")]

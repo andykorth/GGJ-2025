@@ -38,6 +38,10 @@ public class Material
 
 public class World
 {
+	public const string FILENAME = "../world.json";
+    public const float RESEARCH_BOOST = 0.15f;
+
+
 	// Everything you want to save or serialize is stored on the world.
 	public static World instance;
 
@@ -48,9 +52,10 @@ public class World
 	public List<ShipDesign> allShipDesigns;
 	public List<ScheduledTask> allScheduledActions;
 	public List<Material> allMats;
-    public List<Offer> offers = new List<Offer>();  // List of active sell offers
-    public List<Request> requests = new List<Request>(); // List of active buy requests
+    public List<ResearchProject> allResearch;
 
+    public List<Offer> offers;
+    public List<Request> requests;
 
 	public long ticks = 0; // 2^64 seconds is enough time for the rest of the universe
 	public int timescale = 1;
@@ -97,6 +102,7 @@ public class World
 		allScheduledActions = new List<ScheduledTask>();
 		offers = new List<Offer>();
 		requests = new List<Request>();
+		allResearch = new List<ResearchProject>();
 		timescale = 30;
 
 	}
@@ -105,9 +111,10 @@ public class World
 
 	public void Migrate()
 	{
-		if (allMats == null) {
-			allMats = new List<Material>();
-		}
+		if (allMats == null) allMats = new List<Material>();
+		if (offers == null) offers = new List<Offer>();
+		if (requests == null) requests = new List<Request>();
+		if (allResearch == null) allResearch = new List<ResearchProject>();
 
         int rem = offers.RemoveAll(o => string.IsNullOrEmpty(o.materialUUID));
 		if(rem > 0){
@@ -153,9 +160,8 @@ public class World
 
 	}
 
-	public const string FILENAME = "../world.json";
 
-	public static void CreateOrLoad()
+    public static void CreateOrLoad()
 	{
 		Log.Info("Create or load world...");
 		if (File.Exists(FILENAME))
@@ -230,7 +236,6 @@ public class World
 	{
 		return allPlayers.Find(x => x.name.ToLowerInvariant() == r.ToLowerInvariant());
 	}
-
 
 	internal Ship? GetShip(Player p, string? shipUUID)
 	{

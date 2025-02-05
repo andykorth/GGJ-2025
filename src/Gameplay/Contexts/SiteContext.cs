@@ -54,6 +54,7 @@ public class SiteContext : Context {
                         if(found != null){
                             game.Send(p, $"Invite to {found.name}...");
                             Invite(p, game, found, site);
+                            // we return false because don't exit the current context, since we will be swapping it.
                             return false;
                         }
                         if(r == "who"){

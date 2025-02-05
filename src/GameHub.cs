@@ -31,7 +31,7 @@ public class GameHub : Hub
 
     private Player RetrievePlayer(string playerName, HubCallerContext context)
     {
-        var matches = World.instance.allPlayers.FindAll(x => x.name == playerName);
+        var matches = World.instance.allPlayers.FindAll(x => x.name.ToLowerInvariant() == playerName.ToLowerInvariant());
         if(matches.Count > 1){
             Log.Error($"Multiple players exist with name {playerName}");
         }

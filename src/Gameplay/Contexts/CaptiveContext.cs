@@ -14,6 +14,8 @@ public class CaptiveContext : Context {
 
     internal override void Invoke(Player p, GameUpdateService game, string command, string args)
     {
+        Log.Info($"[{p.name}] captive context invoked [{command} {args}]");
+        
         game.Send(p, $"[yellow]>[/yellow][magenta]>{command} {args}[/magenta]");
 
         bool b = captivePrompt!(command);

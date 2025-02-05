@@ -76,27 +76,51 @@ public class Building : IShortLine {
 		var site = World.instance.GetSite(this.siteUUID);
 		string productionMessage = GetProdMessage();
 		string showIndex = index < 0 ? "" : index + ")";
-		return $"   {showIndex} {developmentIcon} {GetName(),-20} {site!.ColoredName(), -20} {productionMessage}\n";
+		return $"   {showIndex,-3} {developmentIcon} {GetName(),-20} {site!.ColoredName(), -15} {productionMessage,-20}\n";
     }
 
-	public string GetProdMessage(){
+	private ScheduledTask? CurrentTask(){
 		if(associatedScheduledTaskUUID != null){
 			// look up task so we know if it's done or not
 			var task = World.instance.FindScheduledTask(associatedScheduledTaskUUID);
 			if(task == null || task.TicksRemaining() < -5){
 				Log.Error("Found a running building without a scheduled task: " + associatedScheduledTaskUUID + " task null: " + (task == null));
 				this.associatedScheduledTaskUUID = null;
-				return isHalted ? "Halted" :  "Idle";
 			}else{
-				return $"Working ({task.TicksRemaining()} s)";
+				return task;
 			}
+		}
+		return null;
+	}
+
+
+	public string GetProdMessage(){
+		var task = CurrentTask();
+		if(task != null){
+			// get building type:
+			string verb = GetBuildingVerb();
+			string producingMat = World.instance.FindMat(task.materialUUID)!.name;
+			return $"{verb} {producingMat} ({task.TicksRemaining()} s)";
 		}else{
-			return isHalted ? "Halted" :  "Idle";
+			return isHalted ? "[Crimson]Halted[/Crimson]" :  "Idle";
 		}
 
 	}
 
-	internal string LongLine(Player p)
+    private string GetBuildingVerb()
+    {
+       switch(this.buildingType){
+			case BuildingType.Retail:
+				return "Selling";
+			case BuildingType.Mine:
+				return "Mining";
+			case BuildingType.Factory:
+				return "Producing";
+		}
+		return "oops";
+    }
+
+    internal string LongLine(Player p)
 	{
 		var site = World.instance.GetSite(this.siteUUID);
 		string siteName = site!.ColoredName();
@@ -105,10 +129,16 @@ public class Building : IShortLine {
 		string s = "";
 		s += Ascii.Header(this.GetName(), 40, GetColorTagName(this.level));
 		s += $"Building Type: {this.buildingType,-20} Upgrade Level: {this.level}\n";
-		s += $"Site:          {siteName,-20} {productionMessage}\n";
+		s += $"Site:          {siteName,-20} {productionMessage, -20}\n";
+		// var task = CurrentTask();
+		// if(task != null){
+		// 	task.
+		// s += $"Production:          {siteName,-20} {productionMessage}\n";
+		// }
 
 		if (buildingType == BuildingType.Mine)
 		{
+
 			s += "\nAvailable Ores:\n";
 			int count = 0;
 			foreach (var pair in site.GetOres())
