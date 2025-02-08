@@ -15,7 +15,8 @@ public class MessageContext : Context {
         // Sort messages: most recent sent date first, unread messages first
         List<Message> sortedMessages = SortedMessages(p);
 
-        string s = Ascii.Header("Messages", 40, "yellow");
+        // string s = Ascii.Header("Messages", 40, "yellow");
+        string s = "";
         s += Context.ShowList(sortedMessages.Cast<IShortLine>().ToList(), "Messages", "message", 20, p, 0);
         game.Send(p, s);
     }

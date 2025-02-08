@@ -68,4 +68,8 @@ internal static class InvokeCommand
         // calls the static initializer.
     }
 
+    public static Context GetContext<T>()
+    {
+        return allContexts[typeof(T).FullName];
+    }
 }

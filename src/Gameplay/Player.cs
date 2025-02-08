@@ -20,6 +20,12 @@ public class Player : IShortLine
 	public List<Building> buildings;
 	public List<Item> items;
 
+    public int fleetCommandOffice;
+    public int adminOffice;
+    public int logisticsOffice;
+    public int commerceBureauOffice;
+    public int researchOffice;
+
 	[NonSerialized]
 	internal ISingleClientProxy client;
 	[NonSerialized]
@@ -29,11 +35,10 @@ public class Player : IShortLine
 	public Context currentContext;
 	[NonSerialized]
     public object ContextContext; // what the currentContext is pointing at
-    public int fleetCommandOffice;
-    public int adminOffice;
-    public int logisticsOffice;
-    public int commerceBureauOffice;
-    public int researchOffice;
+
+	[NonSerialized]
+    internal bool insideContextCallback = false;
+
 
     public Player()
 	{
@@ -162,6 +167,16 @@ public class Player : IShortLine
 
     public void SetContextTo(Context c)
     {
+		if(this.insideContextCallback){
+			CaptiveContext captive = currentContext as CaptiveContext;
+			if(captive != null){
+				Log.Info($"[{name}] queueing a change to context: {currentContext.Name} [{currentContext.GetType()}]. We will later pop to it.");
+				captive.nextContext = c;
+				return;
+			}else{
+				Log.Error($"[{name}] Context change to [{currentContext.GetType()}] while inside a context callback! After the callback your state will get wrecked.");
+			}
+		}
 		this.currentContext = c;
 		SendCommandList(c);
 		Log.Info($"[{name}] set to context: {currentContext.Name} [{currentContext.GetType()}]");
@@ -171,13 +186,25 @@ public class Player : IShortLine
 
     internal void SetCaptivePrompt(string message, Func<string, bool> promptFunc, bool backToMain = false)
     {
+		Context goBackToContext = backToMain ? InvokeCommand.GetContext<MainContext>() : this.currentContext;
         CaptiveContext c = new()
         {
             captivePrompt = promptFunc,
             captivePromptMsg = message,
-            previousContext = backToMain ? InvokeCommand.allContexts[typeof(MainContext).FullName] : this.currentContext
+            nextContext = goBackToContext
         };
 
+        SetContextTo(c);
+    }
+
+    internal void SetCaptivePrompt(string message, Context prevContext, Func<string, bool> promptFunc )
+    {
+        CaptiveContext c = new()
+        {
+            captivePrompt = promptFunc,
+            captivePromptMsg = message,
+            nextContext = prevContext
+        };
         SetContextTo(c);
     }
 
@@ -186,7 +213,7 @@ public class Player : IShortLine
         CaptiveContext c = new()
         {
 			captivePromptMsg = message,
-            previousContext = currentContext,
+            nextContext = currentContext,
             captivePrompt = (string r) =>
             {
                 if (r == "y" || r == "n")

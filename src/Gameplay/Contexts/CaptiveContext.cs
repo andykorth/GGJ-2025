@@ -5,7 +5,7 @@ public class CaptiveContext : Context {
 
 	internal Func<string, bool>? captivePrompt;
 	internal string? captivePromptMsg;
-	internal Context previousContext;
+	internal Context nextContext;
 
     public override void EnterContext(Player p, GameUpdateService game)
     {
@@ -18,13 +18,16 @@ public class CaptiveContext : Context {
         
         game.Send(p, $"[yellow]>[/yellow][magenta]>{command} {args}[/magenta]");
 
+        p.insideContextCallback = true;
         bool b = captivePrompt!(command);
+        p.insideContextCallback = false;
+
         if(b){
             // done with captive prompt!
-            p.SetContextTo(previousContext);
+            p.SetContextTo(nextContext);
         }else{
             // repeat the prompt, they did it wrong.
-            p.Send(captivePromptMsg);
+            p.Send("[red]>[/red]" +captivePromptMsg);
         }
     }
 }

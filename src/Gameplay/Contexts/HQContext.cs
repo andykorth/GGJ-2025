@@ -48,11 +48,14 @@ public class HQContext : Context
         {
             p.Send("[red]Invalid relic selection.[/red]");
             return;
+        }else{
+            p.Send($"You selected the relic [cyan]{selectedRelic.GetName()}[/cyan] for research.");
         }
         
-        string message = $"You selected the relic: [cyan]{selectedRelic.GetName()}[/cyan].\nWho do you want to propose a research agreement with? (or [salmon]cancel[/salmon] or [salmon]who[/salmon])";
+        string message = $"Who do you want to propose a research agreement with? (or [salmon]cancel[/salmon] or [salmon]who[/salmon])";
 
-        p.SetCaptivePrompt(message, (string response) =>
+        p.SetCaptivePrompt(message, InvokeCommand.GetContext<HQContext>(),
+            (string response) =>
         {
             string r = response.ToLower();
             Player? recipient = World.instance.GetPlayerByName(r);
@@ -61,8 +64,8 @@ public class HQContext : Context
             {
                 if (recipient != null) {
                     SendResearchInvite(p, game, recipient, selectedRelic);
-                    // we return false because don't exit the current context, since we will be swapping it.
-                    return false;
+                    // we return true to use the exit message to pop to our new context.
+                    return true;
                 }
 
                 if (r == "who") {
@@ -88,17 +91,18 @@ public class HQContext : Context
         }
 
         game.Send(p, $"You are inviting {recipient.name} to study the relic [cyan]{relic.GetName()}[/cyan].");
-        p.SetCaptivePrompt("Include a one line message with your reseazrch invite:",
+        p.SetCaptivePrompt("Include a one line message with your research invite:",
+            InvokeCommand.GetContext<HQContext>(),
             (string response) =>
             {
                 Message m = new Message(p, global::Message.MessageType.ResearchInvitation, response);
                 m.invitationSiteUUID = relic.id + "";
                 recipient.messages.Add(m);
 
-                game.Send(recipient, $"You have a new research invitation from {p.name}!");
-                game.Send(p, $"Research request sent to {recipient.name}.");
+                game.Send(recipient, $"Hey {recipient.name}! You have a new research invitation from {p.name}!");
+                game.Send(p, $"Research request sent to {recipient.name} from {p.name}.");
                 return true;
-            }, true);
+            } );
     }
 
 }
