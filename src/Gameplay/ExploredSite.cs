@@ -36,9 +36,9 @@ public class ExploredSite : IShortLine {
 		this.planetClass = planetClass;
     }
 
-	public string ColoredName()
+	public string ColoredName(int rightPad = 0)
     {
-        return Ascii.WrapColor(this.name, this.SiteColor());
+        return Ascii.WrapColor( this.name.PadRight(rightPad), this.SiteColor());
     }
 
 	public string ClassString(){
@@ -134,6 +134,30 @@ public class ExploredSite : IShortLine {
 					float frequency = m.rarity * 0.6f + 0.8f * m.rarity * (float) r.NextDouble();
 					matFreq.Add((m, frequency));
 				}
+			}
+		}
+		return matFreq;
+    }
+
+    public List<(Material mat, float freq)> GetFarmCrops()
+    {
+		List<(Material, float)> matFreq = new List<(Material, float)>();
+        Random r = new Random((int) (1000* planetClass));
+		foreach(Material m in World.instance.allMats){
+			if(m.type == MatType.Agricultural){
+				float frequency = m.rarity * 0.6f + 0.8f * m.rarity * (float) r.NextDouble();
+
+				if(this.GoldilocksClass()){
+					if(m == World.nutrigrain || m == World.veggies)
+						matFreq.Add((m, frequency));
+				} else if(this.StandardClass()){
+					if(r.NextDouble() > 0.7f)
+						matFreq.Add((m, frequency));
+				}else{
+					if(m == World.regolith || m == World.vacuumLichen)
+						matFreq.Add((m, frequency));
+				}
+					
 			}
 		}
 		return matFreq;

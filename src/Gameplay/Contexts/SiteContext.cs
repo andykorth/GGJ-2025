@@ -240,6 +240,7 @@ public class SiteContext : Context {
             BuildingType.Retail => "Generates revenue by selling goods.",
             BuildingType.Mine => "Extracts raw materials from the earth.",
             BuildingType.Factory => "Produces finished goods from raw materials.",
+            BuildingType.Farm => "Grows crops on lush planets or harvests regolith and lichen in a vacuum.",
             _ => "Unknown building type."
         };
     }
@@ -259,6 +260,10 @@ public class SiteContext : Context {
         {
             cost = (int)(site.DevelopmentPriceFactor() * 200 + 50);
         }
+        if (type == BuildingType.Factory)
+        {
+            cost = (int)(site.planetClass * 30 + 50);
+        }
 
         return cost;
     }
@@ -273,7 +278,7 @@ public class SiteContext : Context {
         }
         p.cash -= cost;
 
-        int duration = cost / 4 / World.instance.timescale;
+        int duration = cost / World.instance.timescale;
 
         string output = "";
         if (site.population <= 0)
@@ -286,6 +291,13 @@ public class SiteContext : Context {
                         : site.StandardClass()
                             ? $"The first trade post on {site.name} is established, braving the chill winds.\n"
                             : $"A lone outpost on the barren surface of {site.name} sparks the beginnings of commerce.\n";
+                    break;
+                case BuildingType.Farm:
+                    output += site.GoldilocksClass()
+                        ? $"Settlers on {site.name} sow the first fields, hopeful for a thriving harvest in this fertile land.\n"
+                        : site.StandardClass()
+                            ? $"Greenhouses rise on {site.name}, shielding crops from the biting cold.\n"
+                            : $"Out in the cold vacuum, experimental crops grow and agricultural operation begin on {site.name}.\n";
                     break;
 
                 case BuildingType.Mine:
@@ -309,6 +321,13 @@ public class SiteContext : Context {
         {
             switch (type)
             {
+                case BuildingType.Farm:
+                    output += site.GoldilocksClass()
+                        ? $"The fields of {site.name} sway with golden crops, feeding a growing community.\n"
+                        : site.StandardClass()
+                            ? $"Under artificial lights, the first harvest is celebrated by the settlers of {site.name}.\n"
+                            : $"Out in the barren vacuum, the agricultural machines of {site.name} begin crossing the landscape.\n";
+                    break;
                 case BuildingType.Retail:
                     output += site.GoldilocksClass()
                         ? $"Shoppers flood the bustling markets of {site.name}, eager for new wares.\n"
@@ -338,7 +357,7 @@ public class SiteContext : Context {
         output += $"Thanks to {p.name}'s vision, {type} construction has begun on {site.name}.\n";
         output += $"The project is expected to complete in {duration} s, shaping the planet's future.\n";
 
-        p.Send(Ascii.Box(output));
+        p.Send(Ascii.Box(output, "yellow"));
 
         ScheduledTask st = new ScheduledTask(duration, p, site, ScheduledAction.SiteConstruction);
         st.buildingType = type;

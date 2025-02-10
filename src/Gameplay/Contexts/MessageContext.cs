@@ -92,13 +92,13 @@ public class MessageContext : Context {
         {
             if (response)
             {
-                ResearchProject toSender = new ResearchProject();
-                toSender.leaderPlayer = from;
-                toSender.partnerPlayer = p;
-                toSender.researchMaterialUUID = null;
-                toSender.researchStartTime = DateTime.Now;
-                toSender.researchCost = 0;
-                toSender.relicName = relicName;
+                ResearchProject sharedProject = new ResearchProject();
+                sharedProject.leaderPlayer = from;
+                sharedProject.partnerPlayer = p;
+                sharedProject.researchMaterialUUID = null;
+                sharedProject.researchStartTime = DateTime.Now;
+                sharedProject.researchCost = 0;
+                sharedProject.relicName = relicName;
 
                 string s2 = $"A new research project lead by {from.name} has begun!\nThey are assisted by {p.name}. Together they are\nstudying a [cyan]{relicName}[/cyan]!\n \n";
 

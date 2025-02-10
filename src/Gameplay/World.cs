@@ -1,6 +1,8 @@
 
 
 
+using System.Security.Cryptography.X509Certificates;
+
 public enum MatType
 {
 	Production, RetailGoods, Services, Mining, Agricultural, Aquaculture, Salvage
@@ -109,6 +111,8 @@ public class World
 
 	#region  Save and load
 
+	public static Material iron, hydrocarbons, metalFurniture, polyethelene, synthCotton, nutrigrain, veggies, regolith, vacuumLichen;
+
 	public void Migrate()
 	{
 		if (allMats == null) allMats = new List<Material>();
@@ -140,23 +144,55 @@ public class World
 				allMats.Add(mat);
 			}
 		}
-
+		
 		AddIfNeeded("Iron Ore", 10f, MatType.Mining);
 		AddIfNeeded("Cobalt Ore", 1.8f, MatType.Mining);
 		AddIfNeeded("Platinum Group Ore", 0.3f, MatType.Mining);
 		AddIfNeeded("Hydrocarbons", 10f, MatType.Mining);
 
-		var iron = GetMaterialByName("Iron Ore")!;
-		var hydrocarbons = GetMaterialByName("Hydrocarbons")!;
+		iron = GetMaterialByName("Iron Ore")!;
+		hydrocarbons = GetMaterialByName("Hydrocarbons")!;
 		AddProductionItemIfNeeded("Metal Furniture", 1, [(iron.uuid, 1)] );
 		AddProductionItemIfNeeded("Polyethelene", 100, [(hydrocarbons.uuid, 1)]);
 
-		var polyethelene = GetMaterialByName("Polyethelene")!;
+		polyethelene = GetMaterialByName("Polyethelene")!;
 		AddProductionItemIfNeeded("Hull Plates", 1, [(iron.uuid, 3), (polyethelene.uuid, 20)]);
 
-		var metalFurniture = GetMaterialByName("Metal Furniture")!;
+		metalFurniture = GetMaterialByName("Metal Furniture")!;
 		metalFurniture.baseCost = 10;
 		metalFurniture.type = MatType.RetailGoods;
+
+		AddIfNeeded("Cotton", 8f, MatType.Agricultural);
+		AddIfNeeded("Nutrigrain", 3f, MatType.Agricultural);
+		AddIfNeeded("Veggies", 3f, MatType.Agricultural);
+		AddIfNeeded("Regolith", 12f, MatType.Agricultural);
+		AddIfNeeded("Vacuum Lichen", 12f, MatType.Agricultural);
+
+		synthCotton = GetMaterialByName("Cotton")!;
+		nutrigrain = GetMaterialByName("Nutrigrain")!;
+		veggies = GetMaterialByName("Veggies")!;
+		regolith = GetMaterialByName("Regolith")!;
+		vacuumLichen = GetMaterialByName("Vacuum Lichen")!;
+
+
+		AddProductionItemIfNeeded("SynthTextiles", 5, [(synthCotton.uuid, 2)]);
+		AddProductionItemIfNeeded("Nutrient Rations", 10, [(nutrigrain.uuid, 2)]);
+
+
+		// SynthFabric (Textile)
+		AddProductionItemIfNeeded("SynthFabric", 10, [(synthCotton.uuid, 5), (polyethelene.uuid, 2)]);
+
+		AddProductionItemIfNeeded("Pre-Packaged Meals", 20, [(nutrigrain.uuid, 5), (polyethelene.uuid, 1)]);
+		AddProductionItemIfNeeded("Deluxe Meals", 40, [(veggies.uuid, 5), (polyethelene.uuid, 1)]);
+
+		// Luxury Furniture (Retail)
+		var synthFabric = GetMaterialByName("SynthFabric")!;
+		AddProductionItemIfNeeded("Luxury Furniture", 2, [(metalFurniture.uuid, 1), (synthFabric.uuid, 2)]);
+
+		// Industrial Workwear (Protective Clothing)
+		AddProductionItemIfNeeded("Industrial Workwear", 5, [(synthFabric.uuid, 3), (iron.uuid, 1)]);
+
+
 
 	}
 

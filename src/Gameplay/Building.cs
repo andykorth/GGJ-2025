@@ -1,6 +1,6 @@
 
 public enum BuildingType{
-	Retail, Mine, Factory
+	Retail, Mine, Factory, Farm
 }
 
 public class Building : IShortLine {
@@ -46,37 +46,28 @@ public class Building : IShortLine {
 		};
 	}
 
+	public string GetIcon(int level)
+	{
+		return level switch
+		{
+			1 => "=",
+			2 => "*",
+			3 => "x",
+			4 => "#",
+			5 => "@",
+			6 => "&",
+			_ => "-" // Default case
+		};
+	}
+
     public string ShortLine(Player p, int index)
     {
-		string developmentIcon = "<[grey]-[/grey]>";
-
-		switch (level)
-		{
-			case 1:
-				developmentIcon = "<[white]=[/white]>";
-				break;
-			case 2:
-				developmentIcon = "<[cyan]*[/cyan]>";
-				break;
-			case 3:
-				developmentIcon = "<[orchid]x[/orchid]>";
-				break;
-			case 4:
-				developmentIcon = "<[yellow]#[/yellow]>";
-				break;
-			case 5:
-				developmentIcon = "<[chartreuse]@[/chartreuse]>";
-				break;
-			case 6:
-				developmentIcon = "<[RebeccaPurple]&[/RebeccaPurple]>";
-				break;
-			default:
-				break;
-		}
+		string c = GetColorTagName(level);
+		string developmentIcon = $"[{c}]<{GetIcon(level)}>[/{c}]";
 		var site = World.instance.GetSite(this.siteUUID);
 		string productionMessage = GetProdMessage();
 		string showIndex = index < 0 ? "" : index + ")";
-		return $"   {showIndex,-3} {developmentIcon} {GetName(),-20} {site!.ColoredName(), -15} {productionMessage,-20}\n";
+		return $"   {showIndex,-3} {developmentIcon} {GetName(),-15} {site!.ColoredName(15)} {productionMessage,-20}\n";
     }
 
 	private ScheduledTask? CurrentTask(){
@@ -114,6 +105,8 @@ public class Building : IShortLine {
 				return "Selling";
 			case BuildingType.Mine:
 				return "Mining";
+			case BuildingType.Farm:
+				return "Farming";
 			case BuildingType.Factory:
 				return "Producing";
 		}
@@ -138,12 +131,21 @@ public class Building : IShortLine {
 
 		if (buildingType == BuildingType.Mine)
 		{
-
 			s += "\nAvailable Ores:\n";
 			int count = 0;
 			foreach (var pair in site.GetOres())
 			{
 				s += $"   {count}) {pair.mat.name,-20} Richness: {pair.freq:0.00}\n";
+				count += 1;
+			}
+		}
+		if (buildingType == BuildingType.Farm)
+		{
+			s += "\nAvailable Crops:\n";
+			int count = 0;
+			foreach (var pair in site.GetFarmCrops())
+			{
+				s += $"   {count}) {pair.mat.name,-20} Suitability: {pair.freq:0.00}\n";
 				count += 1;
 			}
 		}
@@ -171,19 +173,19 @@ public class Building : IShortLine {
 			int count = 0;
 			foreach (var material in productionMaterials)
 			{
-				s += $"   {count})  {material.name} (Produces: {material.produced})\n";
+				s += $"   {count})  [yellow]{material.name}[/yellow] (Produces: {material.produced})\n";
 				if (material.prereqs.Count == 0) {
 					s += "     No prerequisites required.\n";
 					continue;
 				}
 
-				s += "     Requires:\n";
+				// s += "     Requires:\n";
 				foreach (var (materialUUID, requiredQuantity) in material.prereqs)
 				{
 					Material prereqMaterial = World.instance.FindMat(materialUUID)!;
 					int playerQuantity = player.GetMaterialQuantity(prereqMaterial);
 
-					s += $"     - {prereqMaterial.name}: {playerQuantity}/{requiredQuantity}\n";
+					s += $"     - {prereqMaterial.name}: {requiredQuantity,-20} Have: {playerQuantity}\n";
 				}
 				count += 1;
 			}
@@ -223,6 +225,21 @@ public class Building : IShortLine {
 
 			(var mat, float freq) =  ores[index];
 			string msg = $"Start to mine {mat.name} in {b.GetName()} on {siteName}\n";
+            msg += $"Each hour, this will produce {freq:0.00} units of {mat.name}.";
+
+            Schedule(p, game, b, mat, msg, freq);	
+
+        }
+        else if (buildingType == BuildingType.Farm){
+		
+			var crops = site.GetFarmCrops();
+			if (index < 0 || index >= crops.Count) {
+				game.Send(p, "[red]Invalid selection![/red]");
+				return;
+			}
+
+			(var mat, float freq) =  crops[index];
+			string msg = $"Startting to harvest {mat.name} in {b.GetName()} on {siteName}\n";
             msg += $"Each hour, this will produce {freq:0.00} units of {mat.name}.";
 
             Schedule(p, game, b, mat, msg, freq);	
