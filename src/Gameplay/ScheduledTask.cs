@@ -218,6 +218,10 @@ public class ScheduledTask
 
     private void Production(GameUpdateService service, Player player, Building building)
     {
+        if(building == null){
+            Log.Error($"End production scheduled task for [{player.name}] because building is null.");
+            return;
+        }
 		var site = World.instance.GetSite(building.siteUUID);
 		string siteName = Ascii.WrapColor(site!.name, site!.SiteColor());
 
@@ -266,6 +270,7 @@ public class ScheduledTask
             service.Send(player, productionMessage);
 
             player.RemoveMaterial(m, amountSold);
+            player.cash += (int) (amountSold * soldPerUnit);
         }else{
             Log.Info($"[{player.name}] {building.GetName()} on {site!.name} produced {quantityProduced:0.00} {m.name}");
 
