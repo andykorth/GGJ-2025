@@ -26,6 +26,7 @@ public class Player : IShortLine
     public int commerceBureauOffice;
     public int researchOffice;
 
+
 	[NonSerialized]
 	internal ISingleClientProxy client;
 	[NonSerialized]
@@ -60,6 +61,7 @@ public class Player : IShortLine
 		int invalidRemoved = items.RemoveAll( (item) => item.Material == null);
 		if(invalidRemoved > 0) Log.Error($"Removed {invalidRemoved} invalid items from {this.name} inventory");
 
+		items.RemoveAll( (item) => item.Amount <= 0);
 		
 	    fleetCommandOffice = Math.Max(1, fleetCommandOffice);
         adminOffice = Math.Max(1, adminOffice);
@@ -92,6 +94,27 @@ public class Player : IShortLine
 		Migrate();
 	}
 
+
+	public int GetMaxBuildings(){
+		return adminOffice * 2 + 2;
+	}
+
+	public int GetMaxStorageInBaseCost(){
+		return 1000 + 1000 * logisticsOffice;
+	}
+
+	public int GetMaxStorageFor(Material m){
+		float c = m.baseCost * 0.25f;
+		if(c <= 0){
+			c = 5f / m.rarity;
+		}
+		return (int) (GetMaxStorageInBaseCost() / c);
+	}
+
+	public int GetMaxExchangeOrders(){
+		return (int) 5 + 5 * commerceBureauOffice;
+	}
+
     /// <summary>
     /// Adds an item to the inventory. If an item with the same material already exists, merge it by adding amounts.
     /// </summary>
@@ -100,14 +123,11 @@ public class Player : IShortLine
         if (amount <= 0) return; // Don't add zero or negative amounts
 
         Item? existingItem = items.FirstOrDefault(i => i.Material.uuid == material.uuid);
-        if (existingItem != null)
-        {
-            existingItem.Amount += amount;
-        }
-        else
-        {
-            items.Add(new Item(material, amount));
-        }
+		if(existingItem == null){
+			existingItem = new Item(material, 0);
+			items.Add(existingItem);
+		}
+		existingItem.Amount = Math.Min(this.GetMaxStorageFor(material), Math.Max(0, existingItem.Amount) + amount);
     }
 
     /// <summary>

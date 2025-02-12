@@ -12,7 +12,10 @@ public class InventoryContext : Context
     private static string ShowInventory(int showMax, Player p, int start)
     {
         var list = p.items;
-        return Context.ShowList(list.Cast<IShortLine>().ToList(), "Inventory", "inv", showMax, p, start);
+        string s = "";
+        s += $"Max inventory determined by your [green]Empire Logistics Office[/green] level: {p.logisticsOffice}\n";
+        s += Context.ShowList(list.Cast<IShortLine>().ToList(), "Inventory", "inv", showMax, p, start);
+        return s;
     }
 
     [GameCommand("List all inventory items again.")]

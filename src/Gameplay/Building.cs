@@ -185,7 +185,8 @@ public class Building : IShortLine {
 					Material prereqMaterial = World.instance.FindMat(materialUUID)!;
 					int playerQuantity = player.GetMaterialQuantity(prereqMaterial);
 
-					s += $"     - {prereqMaterial.name}: {requiredQuantity,-20} Have: {playerQuantity}\n";
+					string n = prereqMaterial.name + ": " + requiredQuantity;
+					s += $"     - { n,-24} Have: {playerQuantity}\n";
 				}
 				count += 1;
 			}

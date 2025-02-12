@@ -106,9 +106,11 @@ public class MainContext : Context {
         string output = "";
 
         output += Ascii.Header("Empire Status", 40, "yellow");
+        int unreadInt = p.UnreadMessages();
+        string unreadCount = unreadInt == 0 ? "0" : $"[teal]{unreadInt}[/teal]";
         
-        output += $"   User: {p.name.PadRight(15)} | Cash: { (p.cash+"").PadRight(10) }\n";
-        output += $"   Completed Research: {0}  | Unread Messages: {p.UnreadMessages()} \n";
+        output += $"   User: {p.name.PadRight(16)} | Cash: { (p.cash+"").PadRight(10) }\n";
+        output += $"   Completed Research: {0}  | Unread Messages: {unreadCount} \n";
         output += ShowShips(4, p, 0);
 
         output += ShowSites(4, p, 0);
@@ -121,7 +123,7 @@ public class MainContext : Context {
     {
         var sortedPlayers = World.instance.allPlayers.OrderByDescending(p => p.lastActivity);
 
-        int start = PullIntArg(p, ref args);
+        int start = PullIntArg(p, ref args, true);
 
         string s = ShowList(sortedPlayers.Cast<IShortLine>().ToList(), "Players", "ship", 20, p, start);
         game.Send(p, s);

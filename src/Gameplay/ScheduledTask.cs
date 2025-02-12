@@ -266,7 +266,7 @@ public class ScheduledTask
             }
 
             Log.Info($"[{player.name}] Retail: {building.GetName()} on {site!.name} sold {amountSold} {m.name} for ${soldPerUnit}/u");
-            string productionMessage = $"-> Your {building.GetName()} on {site!.name} sold {amountSold} {m.name} for ${soldPerUnit}/u \n";
+            string productionMessage = $"-> Your {building.GetName()} on {site!.name} sold {amountSold} {m.name} for ${soldPerUnit}/u, totalling ${amountSold * soldPerUnit} \n";
             service.Send(player, productionMessage);
 
             player.RemoveMaterial(m, amountSold);

@@ -144,6 +144,11 @@ public class SiteContext : Context {
     [GameCommand("construct 0: View building construction options.")]
     public static void Construct(Player p, GameUpdateService game, string args)
     {
+        if( p.buildings.Count() >= p.GetMaxBuildings() ){
+            game.Send(p, $"[red]Youre headquarters only allows for {p.GetMaxBuildings()} buildings. Upgrade your Planetary Administration Office.[/red]");
+            return;
+        }
+
         int index;
         string indexS = PullArg(ref args);
         if(int.TryParse(indexS, out index)){

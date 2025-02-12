@@ -22,7 +22,8 @@ public class Item : IShortLine
     public string ShortLine(Player p, int index)
     {
         string showIndex = index < 0 ? "" : index + ")";
-        return $"   {showIndex} {Material.name,-20} {Amount, -20}\n";
+        string qty = $"{Amount} / {p.GetMaxStorageFor(Material)}";
+        return $"   {showIndex} {Material.name,-20} {qty, -20}\n";
     }
 }
 
@@ -63,10 +64,10 @@ public class Request
     [JsonIgnore] 
     public Material Material => World.instance.GetMaterial(materialUUID);
 
-    public string buyerUUID { get; private set; }
-    public string materialUUID { get; private set; }
-    public int Amount { get; set; }
-    public int PricePerUnit { get; }
+    public string buyerUUID;
+    public string materialUUID;
+    public int Amount;
+    public int PricePerUnit;
 
     public Request(Player buyer, Material material, int amount, int pricePerUnit)
     {

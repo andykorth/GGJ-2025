@@ -4,7 +4,16 @@ public class ExchangeContext : Context
 
     public override void EnterContext(Player p, GameUpdateService game)
     {
-        p.Send("[yellow]Commodity Exchange:[/yellow]");
+        string s = "";
+        s += Ascii.Header("Commodity Exchange", 50, "yellow");
+        s += $"Max orders (offers+requests) is determined by your [green]Commerce Bureau Office[/green] (Level {p.commerceBureauOffice})\n";
+
+        int max = p.GetMaxExchangeOrders();
+        int now = World.instance.OfferRequestCount(p);
+
+        s += $"You have {now} of {max} active orders. You have ${p.cash}.\n\n";
+        game.Send(p, s);
+        
         ShowOffers(p, game);
         ShowRequests(p, game);
     }
@@ -21,7 +30,7 @@ public class ExchangeContext : Context
         string s = "[yellow]Sell Offers:[/yellow]\n";
         foreach (var offer in offers)
         {
-            s += $"{offer.Material.name}: {offer.Amount} available at {offer.PricePerUnit} each (Seller: {offer.Seller.name})\n";
+            s += $"{offer.Material.name, 18}: {offer.Amount} available at {offer.PricePerUnit} each (Seller: {offer.Seller.name})\n";
         }
         game.Send(p, s);
     }
@@ -38,7 +47,7 @@ public class ExchangeContext : Context
         string s = "[yellow]Buy Requests:[/yellow]\n";
         foreach (var request in requests)
         {
-            s += $"{request.Material.name}: {request.Amount} wanted at {request.PricePerUnit} each (Buyer: {request.Buyer.name})\n";
+            s += $"{request.Material.name, 18}: {request.Amount} wanted at {request.PricePerUnit} each (Buyer: {request.Buyer.name})\n";
         }
         game.Send(p, s);
     }
