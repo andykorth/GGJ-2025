@@ -12,6 +12,7 @@ const autocompleteList = document.getElementById("autocompleteList");
 
 let contextName = "";
 let commands = [];
+let commandHelps = [];
 
 // Load the stored user input on page load
 document.addEventListener("DOMContentLoaded", function () {
@@ -30,11 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-connection.on("ReceiveLine", function (message) {
-    const messageList = document.getElementById("messagesList");
-
-    const li = document.createElement("li");
-
+function ColorText(message) {
     // Replace inline color tags with corresponding <span> elements
     // Example: [red]word[/red] -> <span style="color: red;">word</span>
     const htmlMessage = message.replace(/\[([a-zA-Z]+)\](.+?)\[\/\1\]/g, (match, color, text) => {
@@ -44,18 +41,24 @@ connection.on("ReceiveLine", function (message) {
         const shadow = `text-shadow: 0 0 10px ${safeColor};`
         return `<span style="color: ${safeColor};${shadow}">${safeText}</span>`;
     });
+    return htmlMessage;
+}
 
+connection.on("ReceiveLine", function (message) {
+    const messageList = document.getElementById("messagesList");
 
-    li.innerHTML = htmlMessage;
+    const li = document.createElement("li");
+    li.innerHTML = ColorText(message);
     messageList.appendChild(li);
     ScrollToBottom();
 });
 
-connection.on("ReceiveCommandListAndHelp", function (commandList, newContextName) {
-    console.log("ReceiveCommandListAndHelp: " + newContextName + " commands: " + commandList)
+connection.on("ReceiveCommandListAndHelp", function (commandList, commandListHelps, newContextName) {
+    console.log("ReceiveCommandListAndHelp for context: " + newContextName + "\n\n commands: " + commandList + "\n\n helps: " + commandListHelps);
     commands = commandList;
+    commandHelps = commandListHelps;
     contextName = newContextName;
-    fillHelpLine();
+    fillHelpLine([]);
 });
 
 
@@ -145,7 +148,7 @@ function SendCurrentMessage() {
     messageInput.focus();
     
     currentMatch = null;
-    fillHelpLine();
+    fillHelpLine([]);
 }
 
 document.getElementById("sendButton").addEventListener("click", function (event) {
@@ -165,10 +168,13 @@ document.getElementById("messageInput").addEventListener("keydown", function (ev
         handleHistoryNavigation(1);
     } else if (event.key === "Tab" && currentMatch) {
         event.preventDefault();
-        // Fill in the command and clear the match
+        // Fill in the command, show the help text, and clear the match
         messageInput.value = currentMatch;
+        fillHelpLine([currentMatch]);
         currentMatch = null;
-        fillHelpLine();
+    }else if (event.key === "Tab"){
+        // don't change focus:
+        event.preventDefault();
     }
 });
 
@@ -176,61 +182,50 @@ messageInput.addEventListener("input", function () {
     const inputText = messageInput.value.toLowerCase();
     if (!inputText) {
         currentMatch = null;
-        fillHelpLine();
+        fillHelpLine([]);
         return;
     }
 
-    // Find the singular best match
-    const bestMatch = commands.find(cmd => cmd.startsWith(inputText));
-    if (bestMatch) {
-        currentMatch = bestMatch;
+    // Find all matches that start with the input text
+    const matchingCommands = commands.filter(cmd => cmd.startsWith(inputText));
+    console.log("Matching commands for ["+inputText+"]: " + matchingCommands)
+
+    if (matchingCommands.length === 1) {
+        currentMatch = matchingCommands[0];
     } else {
         currentMatch = null;
     }
-    fillHelpLine();
+
+    fillHelpLine(matchingCommands);
 });
 
-function fillHelpLine() {
+function fillHelpLine(matches) {
     let autocompleteList = document.getElementById("autocompleteList");
 
     // Clear previous content
     autocompleteList.innerHTML = "";
 
-    var secondPart = currentMatch;
-    if(currentMatch == null || currentMatch === ""){
-        secondPart = commands.join(", ");
+    let commandListText;
+    if (matches.length === 0) {
+        // show all the commands available
+        commandListText = "[magenta]" + commands.join(", ") + "[/magenta]";
+    } else if (matches.length === 1) {
+        // single match plus help text.
+        const matchIndex = commands.indexOf(matches[0]);
+        commandListText = `[magenta]${matches[0]}[/magenta] - [green]${commandHelps[matchIndex]}[/green]`;
+    } else {
+        commandListText = "[magenta]" + matches.join(", ") + "[/magenta]";
     }
+
+    const message = "[yellow]" + contextName + "[/yellow] - " + commandListText;
 
     // Create elements for the colored text
     const contextSpan = document.createElement("span");
-    contextSpan.style.color = "yellow";
-    contextSpan.textContent = contextName;
-
-    const dashSpan = document.createElement("span");
-    dashSpan.textContent = " : ";
-
-    const matchSpan = document.createElement("span");
-    matchSpan.style.color = "magenta";
-    matchSpan.textContent = secondPart;
+    contextSpan.innerHTML = ColorText(message);
 
     // Append elements to the autocomplete list
     autocompleteList.appendChild(contextSpan);
-    autocompleteList.appendChild(dashSpan);
-    autocompleteList.appendChild(matchSpan);
 }
-
-// function hideAutocomplete() {
-//     currentMatch = "";
-//     const autocompleteList = document.getElementById("autocompleteList");
-//     if (autocompleteList) {
-//         autocompleteList.innerHTML = ""; // Clears all children instead of removing the element
-//     }
-// }
-
-// // Hide autocomplete list on blur
-// messageInput.addEventListener("blur", () => {
-//     setTimeout(() => hideAutocomplete(), 100);
-// });
 
 function handleHistoryNavigation(direction) {
     const messageInput = document.getElementById("messageInput");

@@ -33,7 +33,7 @@ public abstract class Context
             return;
         }
 
-        game.Send(p, $"Command [red]{command}[/red] not recognized. Type [salmon]help[/salmon]");
+        game.Send(p, $"Command [red]{command}[/red] not recognized in [yellow]{p.currentContext.Name}[/yellow]. Type [salmon]help[/salmon]");
     }
 
     [GameCommand("See this help message for your current context.", true)]
@@ -150,4 +150,22 @@ public abstract class Context
         return split[0];
     }
 
+    internal (List<string>,List<string>) GetCommandList()
+    {
+        List<string> commands = [];
+		List<string> commandHelps = [];
+        Context c = this;
+
+        foreach(var x in c.Commands.Keys){
+			if(!c.HelpAttrs[x].normallyHidden){
+				commands.Add(x);
+				commandHelps.Add(c.HelpAttrs[x].helpText);
+			}
+		}
+		if(!c.rootContext){
+			commands.Add("exit");
+			commandHelps.Add("Exit the current context and return to the MainMenu.");
+		}
+        return (commands, commandHelps);
+    }
 }
