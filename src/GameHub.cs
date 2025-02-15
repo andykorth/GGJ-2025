@@ -82,8 +82,8 @@ Try '[salmon]help[/salmon]' to get started.
 ");
         // special logic for sending of first menu. Even before player is identified.
         var c= InvokeCommand.allContexts[nameof(MainContext)];
-        string[] commands = c.Commands.Keys.ToArray();
-        Clients.Caller.SendAsync("ReceiveCommandListAndHelp", commands, c.Name);
+        var (commands, commandHelps) = c.GetCommandList();
+        Clients.Caller.SendAsync("ReceiveCommandListAndHelp", commands, commandHelps, c.Name);
 
         return base.OnConnectedAsync();
     }

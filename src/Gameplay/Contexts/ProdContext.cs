@@ -41,7 +41,7 @@ public class ProdContext : Context {
         Building? b = PullIndexArg<Building>(p, game, ref args, p.buildings);
         if(b != null)
         {
-            p.ContextContext = b;
+            p.ContextData = b;
             p.SetContext<BuildingContext>();
         }else{
             game.Send(p, "Bad arg");
@@ -55,7 +55,7 @@ public class BuildingContext : Context {
 
     public override void EnterContext(Player p, GameUpdateService game)
     {
-        Building building = (Building) p.ContextContext;
+        Building building = (Building) p.ContextData;
         p.Send($"[yellow]{Name} Menu:[/yellow]");
         string s= building.LongLine(p);
 
@@ -65,7 +65,7 @@ public class BuildingContext : Context {
     [GameCommand("[salmon]rename Potato Factory[/salmon] - Renames this building to 'Potato Factory'.")]
     public static void Rename(Player p, GameUpdateService game, string args)
     {
-        Building b = (Building) p.ContextContext;
+        Building b = (Building) p.ContextData;
 
         string oldName = b.GetName();
         b.name = args;
@@ -75,7 +75,7 @@ public class BuildingContext : Context {
     [GameCommand("Destroy this building (you can reuse the slot).")]
     public static void Destroy(Player p, GameUpdateService game, string args)
     {
-        Building b = (Building) p.ContextContext;
+        Building b = (Building) p.ContextData;
         p.buildings.Remove(b);
         game.Send(p, $"Building {b.GetName()} destroyed!");
     }   
@@ -83,7 +83,7 @@ public class BuildingContext : Context {
     [GameCommand("[salmon]start 0[/salmon] - Start production on product 0.")]
     public static void Start(Player p, GameUpdateService game, string args)
     {
-        Building b = (Building) p.ContextContext;
+        Building b = (Building) p.ContextData;
         int index = PullIntArg(p, ref args);
         if(index >= 0){
             b.StartProd(p, game, b, index);
@@ -93,7 +93,7 @@ public class BuildingContext : Context {
     [GameCommand("Stop production on current product")]
     public static void Stop(Player p, GameUpdateService game, string args)
     {
-        Building b = (Building) p.ContextContext;
+        Building b = (Building) p.ContextData;
         b.StopProd(p, game, b);
     }
 

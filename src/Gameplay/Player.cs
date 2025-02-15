@@ -35,7 +35,7 @@ public class Player : IShortLine
 	[NonSerialized]
 	public Context currentContext;
 	[NonSerialized]
-    public object ContextContext; // what the currentContext is pointing at
+    public object ContextData; // what the currentContext is pointing at
 
 	[NonSerialized]
     internal bool insideContextCallback = false;
@@ -165,19 +165,10 @@ public class Player : IShortLine
 
     private void SendCommandList(Context c)
     {
-		// wow this trainwreck should be cached.
-		List<string> commands = new();
-		foreach(var x in c.Commands.Keys){
-			if(!c.HelpAttrs[x].normallyHidden){
-				commands.Add(x);
-			}
-		}
-		if(!c.rootContext){
-			commands.Add("exit");
-		}
+		var (commands, commandHelps) = c.GetCommandList();
 
 		var service = World.instance.GetService();
-        service.SendCommandList(this, commands.ToArray(), c.Name );
+        service.SendCommandList(this, commands.ToArray(), commandHelps.ToArray(), c.Name );
     }
 
 	public void SetContext<T>() where T : Context{
@@ -236,19 +227,45 @@ public class Player : IShortLine
             nextContext = currentContext,
             captivePrompt = (string r) =>
             {
-                if (r == "y" || r == "n")
-                {
+                if (r == "y" || r == "n") {
                     responseFunc(r == "y");
                     return true;
-                }
-                else
-                {
+                } else {
                     return false;
                 }
             }
         };
 
         SetContextTo(c);
+    }
+
+
+    internal void SetCaptiveSelectPlayerPrompt(string msg, Action<Player> callback)
+    {
+		Player p = this;
+        SetCaptivePrompt( msg,
+            (string response) => {
+                string r = response.ToLower();
+                // try to find a player name
+                Player? found = World.instance.GetPlayerByName(r);
+                if(r == "cancel" || r == "who" || found != null){
+                    if(r == "who"){
+                        MainContext.WhoCmd(this,  "");
+                        return false; // keep them in the captive prompt
+                    }
+                    if(r == "cancel")
+                        p.Send("Message canceled.");
+                    if(found != null){
+                        callback(found!);
+                        return true; // exit captive prompt after.
+                    }else{
+                        p.Send( $"No one found with name `{r}`");
+                    }
+                    return true;
+                }else{
+                    return false;
+                }
+            });
     }
 
 	public List<ExploredSite> GetExploredSites()
@@ -311,6 +328,7 @@ public class Player : IShortLine
 
 		return list;
     }
+
 }
 
 public class Relic : IShortLine

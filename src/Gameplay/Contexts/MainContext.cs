@@ -121,12 +121,17 @@ public class MainContext : Context {
     [GameCommand("List who has recently been online")]
     public static void Who(Player p, GameUpdateService game, string args)
     {
+        WhoCmd(p, args);
+    }
+    
+    public static void WhoCmd(Player p, string args)
+    {
         var sortedPlayers = World.instance.allPlayers.OrderByDescending(p => p.lastActivity);
 
         int start = PullIntArg(p, ref args, true);
 
         string s = ShowList(sortedPlayers.Cast<IShortLine>().ToList(), "Players", "ship", 20, p, start);
-        game.Send(p, s);
+        p.Send(s);
     }
 
 

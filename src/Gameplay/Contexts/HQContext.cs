@@ -315,8 +315,7 @@ public class HQContext : Context
         }
 
         game.Send(p, $"You are inviting {recipient.name} to study the relic [cyan]{relic.GetName()}[/cyan].");
-        p.SetCaptivePrompt("Include a one line message with your research invite:",
-            InvokeCommand.GetContext<HQContext>(),
+        p.SetCaptivePrompt("Include a one line message with your research invite:", InvokeCommand.GetContext<HQContext>(),
             (string response) =>
             {
                 Message m = new Message(p, global::Message.MessageType.ResearchInvitation, response);

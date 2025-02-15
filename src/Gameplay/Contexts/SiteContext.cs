@@ -23,7 +23,7 @@ public class SiteContext : Context {
     {
         ExploredSite? site = PullIndexArg<ExploredSite>(p, game, ref args, p.GetExploredSites() );
         if(site != null){
-            game.Send(p, Ascii.Header(site.name, 40, site.SiteColor()));
+            game.Send(p, Ascii.Header(site.name, 60, site.SiteColor()));
             game.Send(p, ((IShortLine)site).ShortLine(p, -1));
             game.Send(p, site.LongLine(p));
         }
@@ -32,45 +32,17 @@ public class SiteContext : Context {
     [GameCommand("invite 0 - Invite another player to join you on your site.")]
     public static void Invite(Player p, GameUpdateService game, string args)
     {
-        int index;
-        string indexS = PullArg(ref args);
-        if(int.TryParse(indexS, out index)){
-            ExploredSite site = p.GetExploredSites()[index];
-
+        ExploredSite? site = PullIndexArg(p, game, ref args, p.GetExploredSites());
+        if(site != null){
             string s = "";
             s+= ((IShortLine)site).ShortLine(p, -1);
-            // s+= site.LongLine();
             s+= "By inviting someone this planet, they will be able to build there too.\n It doesn't use up any of your space.\n";
 
             game.Send(p, s);
 
-
-            p.SetCaptivePrompt("Who do you want to invite? (or [salmon]cancel[/salmon] or [salmon]who[/salmon])",
-                (string response) => {
-                    string r = response.ToLower();
-                    // try to find a player name
-                    Player? found = World.instance.GetPlayerByName(r);
-                    if(r == "cancel" || r == "who" || found != null){
-                        if(found != null){
-                            game.Send(p, $"Invite to {found.name}...");
-                            Invite(p, game, found, site);
-                            // we return false because don't exit the current context, since we will be swapping it.
-                            return false;
-                        }
-                        if(r == "who"){
-                            MainContext.Who(p, game, args);
-                            return false; // keep them in the captive prompt
-                        }
-                        if(r == "cancel")
-                            game.Send(p, "Invite canceled.");
-                        return true;
-                    }else{
-                        return false;
-                    }
-                });
-
-        }else{
-            game.Send(p, $"Bad index for site invite [{indexS}]");
+            p.SetCaptiveSelectPlayerPrompt( "Who do you want to invite? (or [salmon]cancel[/salmon] or [salmon]who[/salmon])", (Player found) => {
+                Invite(p, game, found, site);
+            });
         }
     }
 
@@ -90,7 +62,7 @@ public class SiteContext : Context {
         } 
 
         game.Send(p, $"You are inviting {recipient.name} to {site.name}.");
-        p.SetCaptivePrompt("If you want to include a message, type it now.",
+        p.SetCaptivePrompt("If you want to include a message, type it now.", InvokeCommand.GetContext<SiteContext>(),
             (string response) => {
                 Message m = new Message(p, global::Message.MessageType.Invitation, response);
                 m.invitationSiteUUID = site.uuid;
@@ -101,44 +73,6 @@ public class SiteContext : Context {
                 return true;
             });
 
-    }
-
-    [GameCommand("develop 0: Start a development project to increase the population for the entire planet")]
-    public static void Develop(Player p, GameUpdateService game, string args)
-    {
-        int index;
-        string indexS = PullArg(ref args);
-        if(int.TryParse(indexS, out index)){
-            ExploredSite site = p.GetExploredSites()[index];
-            int population = site.pendingPopulation;
-            int developmentCost = (int) ((500 + population * 30) * site.DevelopmentPriceFactor());
-            int nameIndex = (new Random(index + population)).Next(0, Ascii.developmentProjects.Length);
-            string projectName = Ascii.developmentProjects[nameIndex];
-
-            string s = "";
-            s+= ((IShortLine)site).ShortLine(p, -1);
-            // s+= site.LongLine();
-            s+= $"{p.name}, current cash: {p.cash}\n";
-            s+= $"A development project will add 10k citizens, and cost {developmentCost}.\n";
-            s+= $"Project: [cyan]{projectName}[/cyan]\n";
-
-            if(p.cash >= developmentCost){
-
-                game.Send(p, s);
-                 p.SetCaptiveYNPrompt("Do you want to start this development project? (y/n)", (bool response) => {
-                    if(response)
-                        StartDevelopment(p, game, site, developmentCost, projectName);
-                    else
-                        game.Send(p, "No project started.\n");
-                });
-            }else{
-                s+= $"You can't afford to fund this right now!\n";
-                game.Send(p, s);
-            }
-
-        }else{
-            game.Send(p, $"Bad index for site develop [{indexS}]");
-        }
     }
 
     [GameCommand("construct 0: View building construction options.")]
@@ -168,7 +102,7 @@ public class SiteContext : Context {
                     s += "\n";
                 }
                 game.Send(p, s);
-                p.SetCaptivePrompt($"Which do you want to build: [salmon]0-{choiceCount-1}[/salmon] (or [salmon]cancel[/salmon])",
+                p.SetCaptivePrompt($"Which do you want to build: [salmon]0-{choiceCount-1}[/salmon] (or [salmon]cancel[/salmon])", InvokeCommand.GetContext<SiteContext>(),
                     (string response) => {
                         string r = response.ToLower();
                         int index = -1;
@@ -199,10 +133,44 @@ public class SiteContext : Context {
         return $"   {index}) New {type} - ${cost}, {GetTypeDesc(type)}";
     }
 
+
+    [GameCommand("develop 0: Start a development project to increase the population for the entire planet")]
+    public static void Develop(Player p, GameUpdateService game, string args)
+    {
+        ExploredSite? site = PullIndexArg(p, game, ref args, p.GetExploredSites());
+        if(site != null){
+            int population = site.pendingPopulation;
+            int developmentCost = (int) ((500 + population * 30) * site.DevelopmentPriceFactor());
+            int nameIndex = new Random(site.name.GetHashCode() + population).Next(0, Ascii.developmentProjects.Length);
+            string projectName = Ascii.developmentProjects[nameIndex];
+
+            string s = "";
+            s+= ((IShortLine)site).ShortLine(p, -1);
+            // s+= site.LongLine();
+            s+= $"{p.name}, current cash: {p.cash}\n";
+            s+= $"A development project will add 10k citizens, and cost {developmentCost}.\n";
+            s+= $"Project: [cyan]{projectName}[/cyan]\n";
+
+            if(p.cash >= developmentCost){
+
+                game.Send(p, s);
+                 p.SetCaptiveYNPrompt("Do you want to start this development project? (y/n)", (bool response) => {
+                    if(response)
+                        StartDevelopment(p, game, site, developmentCost, projectName);
+                    else
+                        game.Send(p, "No project started.\n");
+                });
+            }else{
+                s+= $"You can't afford to fund this right now!\n";
+                game.Send(p, s);
+            }
+        }
+    }
+
     private static void StartDevelopment(Player p, GameUpdateService game, ExploredSite site, int developmentCost, string projectName)
     {
         p.cash -= developmentCost;
-        int duration = developmentCost / 4 / World.instance.timescale;
+        int duration = developmentCost / World.instance.timescale;
 
         ScheduledTask st = new ScheduledTask(duration, p, site, ScheduledAction.SiteDevelopmentMission);
         st.string1 = projectName;
@@ -234,9 +202,7 @@ public class SiteContext : Context {
         site.pendingPopulation += 10;
 
         p.Send(Ascii.Box(output));
-    
     }
-
     
     private static string GetTypeDesc(BuildingType type)
     {
