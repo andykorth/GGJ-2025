@@ -79,7 +79,6 @@ conduct research!
 
 To begin, [cyan]enter your username above[/cyan], then send your first command below.
 Try '[salmon]help[/salmon]' to get started.
-                                                                                                                                                       
 ");
         // special logic for sending of first menu. Even before player is identified.
         var c= InvokeCommand.allContexts[nameof(MainContext)];
