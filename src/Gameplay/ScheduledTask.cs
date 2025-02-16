@@ -274,9 +274,6 @@ public class ScheduledTask
         }else{
             Log.Info($"[{player.name}] {building.GetName()} on {site!.name} produced {quantityProduced:0.00} {m.name}");
 
-            string productionMessage = $"-> Your {building.GetName()} on {siteName} has produced {quantityProduced:0.00} {m.name} \n";
-
-            service.Send(player, productionMessage);
 
             if (building.leftoverMaterialUUID == this.materialUUID) {
                 quantityProduced += building.leftovers;
@@ -289,16 +286,23 @@ public class ScheduledTask
             building.leftovers = leftovers;
             building.leftoverMaterialUUID = this.materialUUID;
 
-            player.AddItem(m, intQuantity);
+            string productionMessage = $"-> Your {building.GetName()} on {siteName} has produced {quantityProduced:0.00} {m.name} \n";
+            service.Send(player, productionMessage);
+
+            bool filledStorage = player.AddItem(m, intQuantity);
+            if(filledStorage){
+                // return without rescheduling. Halt the job!
+                string haltMessage = $"-> Your {building.GetName()} on {siteName} has filled your storage for {m.name}, and has halted.\n";
+                Log.Info($"{player} {haltMessage}");
+                service.Send(player, haltMessage);
+                building.isHalted = true; // Mark building as halted
+                return;
+            }
         }
 
         // Requeue the task
         Reschedule();
     }
-
-
-
-
 }
 
 public enum ScheduledAction{

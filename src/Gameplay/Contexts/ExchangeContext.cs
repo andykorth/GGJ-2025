@@ -96,6 +96,12 @@ public class ExchangeContext : Context
         int remainingAmount = amount;
         int totalSpent = 0;
 
+        int maxStorageLeft = p.GetMaxStorageFor(material) - p.GetMaterialQuantity(material);
+        if(remainingAmount > maxStorageLeft){
+            game.Send(p, $"Your max remaining storage for {material.name} is {maxStorageLeft}. Reducing your order to that quantity.");
+            remainingAmount = maxStorageLeft;
+        }
+
         foreach (var offer in matchingOffers)
         {
             int tradeAmount = Math.Min(offer.Amount, remainingAmount);
@@ -106,6 +112,8 @@ public class ExchangeContext : Context
                 game.Send(p, "[red]Not enough cash to complete this trade.[/red]");
                 return;
             }
+
+
 
             p.cash -= cost;
             offer.Seller.cash += cost;

@@ -118,16 +118,21 @@ public class Player : IShortLine
     /// <summary>
     /// Adds an item to the inventory. If an item with the same material already exists, merge it by adding amounts.
     /// </summary>
-    public void AddItem(Material material, int amount)
+	/// 
+    public bool AddItem(Material material, int amount)
     {
-        if (amount <= 0) return; // Don't add zero or negative amounts
+        if (amount <= 0) return true; // Don't add zero or negative amounts
 
         Item? existingItem = items.FirstOrDefault(i => i.Material.uuid == material.uuid);
 		if(existingItem == null){
 			existingItem = new Item(material, 0);
 			items.Add(existingItem);
 		}
-		existingItem.Amount = Math.Min(this.GetMaxStorageFor(material), Math.Max(0, existingItem.Amount) + amount);
+		int newAmt = Math.Max(0, existingItem.Amount) + amount;
+		int maxStorage = this.GetMaxStorageFor(material);
+		bool exceedsMax = newAmt > maxStorage;
+		existingItem.Amount = Math.Min(maxStorage, newAmt);
+		return exceedsMax;
     }
 
     /// <summary>
