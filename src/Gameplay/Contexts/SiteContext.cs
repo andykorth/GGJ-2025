@@ -79,7 +79,7 @@ public class SiteContext : Context {
     public static void Construct(Player p, GameUpdateService game, string args)
     {
         if( p.buildings.Count() >= p.GetMaxBuildings() ){
-            game.Send(p, $"[red]Youre headquarters only allows for {p.GetMaxBuildings()} buildings. Upgrade your Planetary Administration Office.[/red]");
+            game.Send(p, $"[red]Your headquarters only allows for {p.GetMaxBuildings()} buildings. Upgrade your Planetary Administration Office.[/red]");
             return;
         }
 

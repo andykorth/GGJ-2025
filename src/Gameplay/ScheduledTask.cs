@@ -274,7 +274,6 @@ public class ScheduledTask
         }else{
             Log.Info($"[{player.name}] {building.GetName()} on {site!.name} produced {quantityProduced:0.00} {m.name}");
 
-
             if (building.leftoverMaterialUUID == this.materialUUID) {
                 quantityProduced += building.leftovers;
             } else {

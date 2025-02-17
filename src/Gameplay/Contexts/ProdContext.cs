@@ -55,12 +55,18 @@ public class BuildingContext : Context {
 
     public override void EnterContext(Player p, GameUpdateService game)
     {
+        List(p, game, "");
+    }
+
+    [GameCommand("List production items on this building.")]
+    public static void List(Player p, GameUpdateService game, string args)
+    {
         Building building = (Building) p.ContextData;
-        p.Send($"[yellow]{Name} Menu:[/yellow]");
+        p.Send($"[yellow]Building Menu:[/yellow]");
         string s= building.LongLine(p);
 
         game.Send(p, s);
-    }
+    }   
 
     [GameCommand("[salmon]rename Potato Factory[/salmon] - Renames this building to 'Potato Factory'.")]
     public static void Rename(Player p, GameUpdateService game, string args)

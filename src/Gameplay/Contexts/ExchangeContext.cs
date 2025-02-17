@@ -112,9 +112,6 @@ public class ExchangeContext : Context
                 game.Send(p, "[red]Not enough cash to complete this trade.[/red]");
                 return;
             }
-
-
-
             p.cash -= cost;
             offer.Seller.cash += cost;
             p.AddItem(material, tradeAmount);
