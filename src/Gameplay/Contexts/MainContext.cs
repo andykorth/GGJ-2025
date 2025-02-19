@@ -87,7 +87,7 @@ public class MainContext : Context {
     {
         string output = "";
 
-        output += $"========== World Status ==========\n";
+        output += Ascii.Header("World Status", 60, "green");
         output += " World created: " + World.instance.worldCreationDate.ToString() + "\n";
         output += $" Current Tick: {World.instance.ticks}        Speed: {World.instance.timescale}\n";
         output += " Players Joined: " + World.instance.allPlayers.Count() + "\n";
@@ -105,7 +105,7 @@ public class MainContext : Context {
         p.tutorialStep = Math.Min(1, p.tutorialStep);
         string output = "";
 
-        output += Ascii.Header("Empire Status", 40, "yellow");
+        output += Ascii.Header("Empire Status", 60, "yellow");
         int unreadInt = p.UnreadMessages();
         string unreadCount = unreadInt == 0 ? "0" : $"[teal]{unreadInt}[/teal]";
         

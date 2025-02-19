@@ -11,11 +11,11 @@ public class HQContext : Context
     [GameCommand("See this help message for your current context.", true)]
     public static new void Help(Player p, GameUpdateService game, string args)
     {
-        string output = Ascii.Header("How to Research", 50, "cyan");
+        string output = Ascii.Header("How to Research", 60, "cyan");
         output += "You may research at your headquarters by sending one of your relics to a research partner.\nOnly the Research Leader needs to spend their relic. You can only have each player as a research partner once.\n";
         output += "Both the research leader and partner gain the benefit of the research.\n";
         output += $"When a new Material is developed, the leader designs and names it. Both the leader and partner get a {World.RESEARCH_BOOST} bonus to production speed of that material.\n";
-        output +=  Ascii.Header("Office Upgrades", 50, "yellow");
+        output +=  Ascii.Header("Office Upgrades", 60, "yellow");
         output += $"Your headquarters contains various offices that allow you to expand your empire.\n";
         output += $"The [green]Planetary Administration Office[/green] allows you to increase the number of buildings you can construct. The [green]Empire Logistics Office[/green] increases your max storage.\n";
         output += $"The [green]Commerce Bureau[/green] increases the number of orders you can have on the exchange, and the [green]Fleet Command Center[/green] increases the number of ships you can control.\n";
@@ -27,7 +27,7 @@ public class HQContext : Context
     [GameCommand("List all Headquarters Statistics.")]
     public static void List(Player p, GameUpdateService game, string args)
     {
-        string output = Ascii.Header("Headquarters", 50, "yellow");
+        string output = Ascii.Header("Headquarters", 60, "yellow");
         output += $"   0) {"Planetary Administration Office:",-34} Level {p.adminOffice}\n";
         output += $"   1) {"Empire Logistics Office:",-34} Level {p.logisticsOffice}\n";
         output += $"   2) {"Fleet Command Center:",-34} Level {p.fleetCommandOffice}\n";

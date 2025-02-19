@@ -5,7 +5,7 @@ public class ExchangeContext : Context
     public override void EnterContext(Player p, GameUpdateService game)
     {
         string s = "";
-        s += Ascii.Header("Commodity Exchange", 50, "yellow");
+        s += Ascii.Header("Commodity Exchange", 60, "yellow");
         s += $"Max orders (offers+requests) is determined by your [green]Commerce Bureau Office[/green] (Level {p.commerceBureauOffice})\n";
 
         int max = p.GetMaxExchangeOrders();

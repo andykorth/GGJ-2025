@@ -76,7 +76,7 @@ public abstract class Context
         return ShowList(list.Cast<IShortLine>().ToList(), "Ships", "ship", showMax, p, start);
     }
 
-    internal static string ShowList(List<IShortLine> list, string title, string command, int showMax, Player p, int start, int headerWidth = 40)
+    internal static string ShowList(List<IShortLine> list, string title, string command, int showMax, Player p, int start, int headerWidth = 60)
     {
         string output = Ascii.Header($"{title} [{list.Count}]", headerWidth);
         int count = 0;

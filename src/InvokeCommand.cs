@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using System.Reflection;
-using Microsoft.AspNetCore.Identity.Data;
 
 [AttributeUsage(AttributeTargets.Method)]
 public class GameCommandAttribute : Attribute
@@ -30,19 +27,19 @@ internal static class InvokeCommand
             .GetTypes()
             .Where(t => t.IsSubclassOf(typeof(Context)) && !t.IsAbstract);
 
-        foreach (var type in contextTypes)
-        {
-            if (Activator.CreateInstance(type) is Context contextInstance)
-            {
+        foreach (var type in contextTypes) {
+
+            if (Activator.CreateInstance(type) is Context contextInstance) {
                 string contextName = type.Name;
                 allContexts[contextName] = contextInstance;
 
                 // Find all methods with GameCommand attribute in this context
                 var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy )
-                    .Where(m => m.GetCustomAttributes(typeof(GameCommandAttribute), true).Any());
+                    .Where(m => m.GetCustomAttributes(typeof(GameCommandAttribute), true).Length != 0);
 
                 foreach (var method in methods)
                 {
+                    // Log.Info($"Context: {type} method: {method.Name} in {method.DeclaringType}");
                     var attribute = method.GetCustomAttribute<GameCommandAttribute>();
                     var commandName = method.Name.ToLower();
 
@@ -51,8 +48,10 @@ internal static class InvokeCommand
                     }
                     
                     // Store in the context's own dictionary
-                    contextInstance.Commands[commandName] = method;
-                    contextInstance.HelpAttrs[commandName] = attribute!;
+                    if(!contextInstance.Commands.ContainsKey(commandName)){
+                        contextInstance.Commands[commandName] = method;
+                        contextInstance.HelpAttrs[commandName] = attribute!;
+                    }
                 }
             }
         }

@@ -120,7 +120,7 @@ public class Building : IShortLine {
 		string productionMessage = GetProdMessage();
 
 		string s = "";
-		s += Ascii.Header(this.GetName(), 40, GetColorTagName(this.level));
+		s += Ascii.Header(this.GetName(), 60, GetColorTagName(this.level));
 		s += $"Building Type: {this.buildingType,-20} Upgrade Level: {this.level}\n";
 		s += $"Site:          {siteName,-20} {productionMessage, -20}\n";
 		// var task = CurrentTask();
