@@ -211,6 +211,7 @@ public class World
 		{
 			Log.Info("No world found, writing one.");
 			instance = new World();
+			instance.Migrate();
 			SaveWorld();
 		}
 	}

@@ -40,7 +40,7 @@ public class GameHub : Hub
             Log.Info($"First log in of player: {playerName}");
             p = new Player(playerName);
             // new client, send them the welcome:
-            Send($"Welcome {p}. Clients connected: {ConnectedClients.Count}");
+            Send($"Welcome {p.name}. Clients connected: {ConnectedClients.Count}");
             Send($"Type 'help' for help.");
     
             Clients.Others.SendAsync("ReceiveLine", $"Player [{p.name}] has joined.");
