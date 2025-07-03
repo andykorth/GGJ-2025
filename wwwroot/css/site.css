@@ -30,6 +30,14 @@ body {
 .inline-button:hover {
   background-color: #555;
 }
+.disabled-button {
+  background-color: #555 !important;
+  color: #999 !important;
+  border-color: #444 !important;
+  cursor: not-allowed;
+  text-shadow: none !important;
+  opacity: 0.6;
+}
 
 
 html {

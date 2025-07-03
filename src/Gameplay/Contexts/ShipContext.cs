@@ -25,7 +25,7 @@ public class ShipContext : Context {
                 output += $" Exploration mission will take {ticks} seconds.";
 
                 game.Send(p, output);
-                p.SetCaptiveYNPrompt( "Do you want to start this mission? (y/n)", (bool response) => {
+                p.SetCaptiveYNPrompt( "Do you want to start this mission?", (bool response) => {
                     if(response)
                         StartExploration(ticks, p, s);
                     else

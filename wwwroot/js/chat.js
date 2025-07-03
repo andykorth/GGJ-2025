@@ -57,6 +57,16 @@ function SubmitInlineCommand(command) {
     SendCurrentMessage();
 }
 
+function DisableAllInlineButtons() {
+    const buttons = document.querySelectorAll(".inline-button");
+
+    buttons.forEach(button => {
+        button.disabled = true;
+        button.classList.add("disabled-button");
+        button.onclick = null; // Remove event handler
+    });
+}
+
 connection.on("ReceiveLine", function (message) {
     const messageList = document.getElementById("messagesList");
 
@@ -149,6 +159,7 @@ function SendCurrentMessage() {
     connection.invoke("PlayerSendCommand", user, message).catch(function (err) {
         return console.error(err.toString());
     });
+    DisableAllInlineButtons();
 
     localStorage.setItem("userInput", user);
 

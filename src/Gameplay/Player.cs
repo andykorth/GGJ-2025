@@ -226,9 +226,11 @@ public class Player : IShortLine
 
     internal void SetCaptiveYNPrompt(string message, Action<bool> responseFunc)
     {
+		string promptPostfix = $" (y/n) [button command='y' label='yes'] [button command='n' label='no']";
+
         CaptiveContext c = new()
         {
-			captivePromptMsg = message,
+			captivePromptMsg = message + promptPostfix,
             nextContext = currentContext,
             captivePrompt = (string r) =>
             {

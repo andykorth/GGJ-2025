@@ -67,7 +67,7 @@ public class MessageContext : Context {
         else
         {
             game.Send(p, Ascii.Box(s));
-            p.SetCaptiveYNPrompt($"Do you want to join {from.name} on {site!.name}? (y/n)", (bool response) =>
+            p.SetCaptiveYNPrompt($"Do you want to join {from.name} on {site!.name}?", (bool response) =>
             {
                 if (response)
                 {
@@ -90,7 +90,7 @@ public class MessageContext : Context {
 
         game.Send(p, Ascii.Box(s));
 
-        p.SetCaptiveYNPrompt($"Do you want to join {from.name} in their research project? (y/n)", (bool response) =>
+        p.SetCaptiveYNPrompt($"Do you want to join {from.name} in their research project?", (bool response) =>
         {
             if (response)
             {

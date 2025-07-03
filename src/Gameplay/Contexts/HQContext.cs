@@ -158,7 +158,7 @@ public class HQContext : Context
         }
         p.Send(s);
 
-        p.SetCaptiveYNPrompt($"You have the required materials. Do you want to proceed with construction? (y/n)", (bool response) =>
+        p.SetCaptiveYNPrompt($"You have the required materials. Do you want to proceed with construction?", (bool response) =>
         {
             if (response)
             {

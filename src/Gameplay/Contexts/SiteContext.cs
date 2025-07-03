@@ -154,7 +154,7 @@ public class SiteContext : Context {
             if(p.cash >= developmentCost){
 
                 game.Send(p, s);
-                 p.SetCaptiveYNPrompt("Do you want to start this development project? (y/n)", (bool response) => {
+                 p.SetCaptiveYNPrompt("Do you want to start this development project?", (bool response) => {
                     if(response)
                         StartDevelopment(p, game, site, developmentCost, projectName);
                     else
