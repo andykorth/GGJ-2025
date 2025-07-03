@@ -423,7 +423,6 @@ public class Ship : IShortLine
 	// this isn't used for the timer, but it's here so we can show it.
 	public long arrivalTime = 0;
 
-
 	public string ShortLine(Player p, int index = -1)
 	{
 		string showIndex = index < 0 ? "" : index + ")";
@@ -432,7 +431,13 @@ public class Ship : IShortLine
 		{
 			mission += $" ({arrivalTime - World.instance.ticks}s)";
 		}
-		return $"   {showIndex} {GetName()} - Health: {(int)(condition * 100)}%, {mission}\n";
+		string exploreButton = "";
+		if (shipMission == ShipMission.Idle)
+		{
+			exploreButton = index < 0 ? "" : $"[button command='explore {index}' label='Explore']";
+		}
+
+		return $"   {showIndex} {GetName()} - Health: {(int)(condition * 100) + "%", -6} {mission, -8} {exploreButton}\n";
 	}
 
 	internal string LongLine()

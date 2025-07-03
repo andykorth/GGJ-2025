@@ -31,24 +31,37 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-function ColorText(message) {
+function FormatMessage(message) {
     // Replace inline color tags with corresponding <span> elements
     // Example: [red]word[/red] -> <span style="color: red;">word</span>
-    const htmlMessage = message.replace(/\[([a-zA-Z]+)\](.+?)\[\/\1\]/g, (match, color, text) => {
+    var htmlMessage = message.replace(/\[([a-zA-Z]+)\](.+?)\[\/\1\]/g, (match, color, text) => {
         // Escape color and text to prevent potential injection shenanigans 
         const safeColor = color.replace(/[^a-zA-Z]/g, "");
         const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const shadow = `text-shadow: 0 0 10px ${safeColor};`
         return `<span style="color: ${safeColor};${shadow}">${safeText}</span>`;
     });
+
+    // Replace [button command='...' label='...'] with inline buttons
+    htmlMessage = htmlMessage.replace(/\[button\s+command=['"](.+?)['"]\s+label=['"](.+?)['"]\]/g, (match, command, label) => {
+        const safeCommand = command.replace(/"/g, "&quot;");
+        const safeLabel = label.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return `<button class="inline-button" onclick="SubmitInlineCommand('${safeCommand}')">${safeLabel}</button>`;
+    });    
     return htmlMessage;
+}
+
+function SubmitInlineCommand(command) {
+    const messageInput = document.getElementById("messageInput");
+    messageInput.value = command;
+    SendCurrentMessage();
 }
 
 connection.on("ReceiveLine", function (message) {
     const messageList = document.getElementById("messagesList");
 
     const li = document.createElement("li");
-    li.innerHTML = ColorText(message);
+    li.innerHTML = FormatMessage(message);
     messageList.appendChild(li);
     ScrollToBottom();
 });
@@ -221,7 +234,7 @@ function fillHelpLine(matches) {
 
     // Create elements for the colored text
     const contextSpan = document.createElement("span");
-    contextSpan.innerHTML = ColorText(message);
+    contextSpan.innerHTML = FormatMessage(message);
 
     // Append elements to the autocomplete list
     autocompleteList.appendChild(contextSpan);

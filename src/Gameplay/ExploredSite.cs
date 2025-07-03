@@ -93,7 +93,8 @@ public class ExploredSite : IShortLine {
 		string classMessage = ClassString();
 		int buildingCount = this.GetBuildingsOnSite(p).Count();
 		string showIndex = index < 0 ? "" : index + ")";
-		return $"   {showIndex} {developmentIcon} {name,-15} - {classMessage,-18} {buildingCount} buildings. \n";
+		string viewButton = index < 0 ? "" : $"[button command='view {index}' label='View']";
+		return $"   {showIndex} {developmentIcon} {name,-15} - {classMessage,-18} {buildingCount} buildings   {viewButton}\n";
     }
 
     internal string LongLine(Player player)
@@ -110,7 +111,17 @@ public class ExploredSite : IShortLine {
 			s += b.ShortLine(player, count);
 			count += 1;
 		}
-
+		s += $"\nAvailable Ores on {this.name}:\n";
+		foreach (var pair in GetOres())
+		{
+			s += $"   {pair.mat.name,-20} Richness: {pair.freq:0.00}\n";
+		}
+		s += $"\nAvailable Crops on {this.name}:\n";
+		foreach (var pair in GetFarmCrops())
+		{
+			s += $"   {pair.mat.name,-20} Suitability: {pair.freq:0.00}\n";
+		}
+		
 		return s;
     }
 
